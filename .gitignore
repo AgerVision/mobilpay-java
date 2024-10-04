@@ -15,3 +15,6 @@
 
 # Package Files #
 *.jar
+
+target/
+.DS_Store
