@@ -220,7 +220,7 @@ public abstract class Abstract {
 			String name, value;
 			for(int i=0; i<elems.getLength(); i++) {
 				name = elems.item(i).getNodeName();
-				value = elems.item(i).getNodeValue();
+				value = elems.item(i).getTextContent();
 				if(name.compareToIgnoreCase("return")==0)
 					this._returnUrl = value;
 				else if (name.compareToIgnoreCase("confirm")==0)
@@ -335,7 +335,7 @@ public abstract class Abstract {
 		transformer.transform(source, result);
 		writer.close();
 		String srcData = writer.toString();
-		//System.out.println("srcData:"+srcData);
+		//System.out.println("srcData:\n"+srcData);
 		return OpenSSL.openssl_seal(_certificateAsString, srcData);
 	}
 
