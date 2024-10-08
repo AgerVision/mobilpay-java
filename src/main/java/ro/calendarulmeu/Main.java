@@ -241,7 +241,7 @@ public class Main {
     public static void parsePaymentResponse(
         String data, String envKey, String privateKey,
         String[] action, String[] email, BigDecimal[] processedAmount,
-        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails
+        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId
     ) {
         try {
             // Check if data, envKey, or privateKey is null
@@ -261,20 +261,13 @@ public class Main {
                 Notify mobilpayResponse = cardResponse._objReqNotify;
                 
                 // Extract the required information from cardResponse
+                orderId[0] = cardResponse._orderId;
                 action[0] = mobilpayResponse._action;
                 email[0] = mobilpayResponse._customer._email;
                 processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
                 crc[0] = mobilpayResponse._crc;
                 errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
                 errorMessage[0] = mobilpayResponse._errorMessage;
-
-                // Log the extracted information
-                System.out.println("Extracted Action: " + action[0]);
-                System.out.println("Extracted Email: " + email[0]);
-                System.out.println("Extracted Processed Amount: " + processedAmount[0]);
-                System.out.println("Extracted CRC: " + crc[0]);
-                System.out.println("Extracted Error Code: " + errorCode[0]);
-                System.out.println("Extracted Error Message: " + errorMessage[0]);
             } else {
                 throw new Exception("Unexpected payment response type: " + (paymentResponse != null ? paymentResponse.getClass().getName() : "null"));
             }

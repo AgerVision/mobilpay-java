@@ -51,6 +51,7 @@ public class PaymentServlet extends HttpServlet {
         BigDecimal[] errorCode = new BigDecimal[1];
         String[] errorMessage = new String[1];
         String[] javaErrorDetails = new String[1];
+        String[] orderId = new String[1];
 
         if (data == null || envKey == null || encryptedPrivateKey == null || secretOcid == null) {
             javaErrorDetails[0] = "One or more required parameters are null. Data: " + (data != null) + ", EnvKey: " + (envKey != null) + ", EncryptedPrivateKey: " + (encryptedPrivateKey != null) + ", SecretOcid: " + (secretOcid != null);
@@ -63,17 +64,17 @@ public class PaymentServlet extends HttpServlet {
                     throw new Exception("Failed to retrieve AES key from SecretServlet");
                 }
 
-                // Decrypt the private key
                 String privateKey = Main.decryptAES(encryptedPrivateKey, aesKey);
 
-                // Now call parsePaymentResponse with the decrypted private key
-                Main.parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount, crc, errorCode, errorMessage, javaErrorDetails);
+                Main.parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
+                crc, errorCode, errorMessage, javaErrorDetails, orderId);
             } catch (Exception e) {
                 javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
             }
         }
 
-        ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0], crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0]);
+        ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0],
+            crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0]);
         sendJsonResponse(response, result);
     }
 
@@ -111,8 +112,10 @@ public class PaymentServlet extends HttpServlet {
         public BigDecimal errorCode;
         public String errorMessage;
         public String javaErrorDetails;
+        public String orderId;
 
-        public ParseResponseResult(String action, String email, BigDecimal processedAmount, String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails) {
+        public ParseResponseResult(String action, String email, BigDecimal processedAmount,
+            String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
@@ -120,6 +123,7 @@ public class PaymentServlet extends HttpServlet {
             this.errorCode = errorCode;
             this.errorMessage = errorMessage;
             this.javaErrorDetails = javaErrorDetails;
+            this.orderId = orderId;
         }
     }
 
