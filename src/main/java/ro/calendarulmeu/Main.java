@@ -10,7 +10,6 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.io.IOException;
+import java.math.BigDecimal;
 
 import javax.sql.rowset.serial.SerialClob;
 
@@ -27,6 +27,7 @@ import ro.mobilPay.payment.request.Abstract;
 import ro.mobilPay.payment.request.Card;
 import ro.mobilPay.util.ListItem;
 import ro.mobilPay.util.OpenSSL;
+import ro.mobilPay.payment.request.Notify;
 
 public class Main {
     public static void main(String[] args) {
@@ -102,24 +103,88 @@ public class Main {
         try {
             System.out.println("Testing response...");
             
-            String bodyEnvKey = "7HbgKMMNe3HkW%2BM4BR7fz9Q8YzvkX0Hh0B4Pv7fr9wmjMNQs1cXgDxTQ0Uy%2FUglQXoKbzcnH%2FRDKbSubn85kOROlA7CLnpdoF7lcWO3tDB5vNbt5MqKMP1LP25xPX0DYT%2FXko3NMQeXsgykJn5kFz3fv24VSyLk88AmYu1VhzQk%3D";
-            String bodyData = "NfcRa9Lu%2FLf9CpJ3YN3cnGbZbdu5pyDd2teeMgpwwxbhore2O%2BeANe9sUbp%2FoPduabtaTO5lc8L4OStN%2Fe0qlm9ryCD8YRwN6Je3fXyb%2BuPfPZGDrdmhf%2FWJrOV%2F8RzuFZdgdPA1RHBxqpCfpR3ao3R6eY9mBZ%2FnnMwk%2BbFwQjDci5tiVFT685uiQGfgh1uUsxxCZcEYKBCtqJO9NdgLoTp5%2B0GgRJKe%2F%2BqANb0hTFMtYhP5%2FzOU2ttcR%2BxF1NKuMHKuasMC8TTtF0zsp7Xcq6op%2FlZ0jIhgHpUZZ%2Bzv%2Bwcp8c3dkm7aCQaa6XqtfGqAQHIQaNXcrgBXnTqSUDBFNnBhXHYoPh0qHZXDC9MIQ5s4gMjiXcTQe2PqHtvphZkuwKuf4%2FIh%2FA%2Fwkf6y50SSxRqpn3hgFYMvuRYAGWMi9x4u%2B%2B%2BMip%2B4pjzrK6gfpY1xmWwfYfTa%2FvY00xM%2BBoebe0iAJfZS1vk26n%2FA9SYHvW6VXTTtviy5YkzJZVKppdIwJvMO%2BG%2Bz8BB3aFt9bQnFXtNzzdXs0%2Fc15on8XookpRGOeLAhJB9mI7WrSrjcGkqRfScwAVsJid5suLy%2F0WetA3JU8Plh9Sdc8BZkgWjKUnyYmZw3Bt5OpCPIWcCQzUts98GWqSZwHH%2FvwepHJvaojbFdXRF8wZH4GbqPwYSpuusyo8Pb0ozCS6iwtamx6a4nYplpwSiUHGFrOoCg2mRGEs2VB4xe9hl50Zb1m%2FaP15Q5FvuphsVDam%2FJrXMIgVmQjQhNiTKqG5rSJKosaL1BIWSRcWIZZA4iDMCVbSTQnqhP%2Ft99PR8Ro8v68mbPViAldQSvsNz1b%2BNUX%2BIlRbLXViLRWvyrnDosJcpeHIAjViNvz6xxF4Xmhv5QwT2z80o4i0BVLMqdQvPjwrebwiYpTOQlgrfymxnZ17%2FTIS%2F06cvTZ7Vt%2B%2BfQDlwA7LVCSq7v5wrCsUGPMQKCUb3KjlfhetNAdEfpo9DEwQrblb%2FdxmV0hXpqLjDQSMqRqCDxLVlwMzEgAq%2Fg%2F2hll1RoXCxpJ3REv3VQBa3osdJ2KOUZzP1rdHikGsbKYKuLbNylyiF5VTGYApnKzvwOXLjdz1ixt2o1qQELOHoAJ0Hn%2Brxsz2gy1jd90O%2BJKLUodrYGxjR1JZuHCsATuhmnkQXJkrkRmVxnkg4B3CCGZfXepnTfAhJuANdkOWpNN9afACM833MshDrLJJIr6WugDOdoLdNHInbn57UMy2xdHCaLPFJbUQksaGZWLxM2cbGg1P2H9EmoWHcP8Ns7GzDpGd25Xl0veHLSoFcJF2XRcWScQDfawqW2pHeskq%2Fc0Mr6RILjOpBnbBQVX1QJZ8fHGTXQ0MJflKctko%2BsXesi4wzBQk6XKICp%2BnhzXzgqUM9UaeHoikVhTfpkPWCvRnT%2B8wMkEtAJ%2FmHWTV6hhEay8DhaYjbCoDfsuNfjnR1zWy1kNJvZZdjEciLVXotg4wk2lJBInD3cIwE%3D";
-            String cipher = "rc4";
+            String envKey = "7HbgKMMNe3HkW+M4BR7fz9Q8YzvkX0Hh0B4Pv7fr9wmjMNQs1cXgDxTQ0Uy/UglQXoKbzcnH/RDKbSubn85kOROlA7CLnpdoF7lcWO3tDB5vNbt5MqKMP1LP25xPX0DYT/Xko3NMQeXsgykJn5kFz3fv24VSyLk88AmYu1VhzQk=";
+            String data = "NfcRa9Lu/Lf9CpJ3YN3cnGbZbdu5pyDd2teeMgpwwxbhore2O+eANe9sUbp/oPduabtaTO5lc8L4OStN/e0qlm9ryCD8YRwN6Je3fXyb+uPfPZGDrdmhf/WJrOV/8RzuFZdgdPA1RHBxqpCfpR3ao3R6eY9mBZ/nnMwk+bFwQjDci5tiVFT685uiQGfgh1uUsxxCZcEYKBCtqJO9NdgLoTp5+0GgRJKe/+qANb0hTFMtYhP5/zOU2ttcR+xF1NKuMHKuasMC8TTtF0zsp7Xcq6op/lZ0jIhgHpUZZ+zv+wcp8c3dkm7aCQaa6XqtfGqAQHIQaNXcrgBXnTqSUDBFNnBhXHYoPh0qHZXDC9MIQ5s4gMjiXcTQe2PqHtvphZkuwKuf4/Ih/A/wkf6y50SSxRqpn3hgFYMvuRYAGWMi9x4u+++Mip+4pjzrK6gfpY1xmWwfYfTa/vY00xM+Boebe0iAJfZS1vk26n/A9SYHvW6VXTTtviy5YkzJZVKppdIwJvMO+G+z8BB3aFt9bQnFXtNzzdXs0/c15on8XookpRGOeLAhJB9mI7WrSrjcGkqRfScwAVsJid5suLy/0WetA3JU8Plh9Sdc8BZkgWjKUnyYmZw3Bt5OpCPIWcCQzUts98GWqSZwHH/vwepHJvaojbFdXRF8wZH4GbqPwYSpuusyo8Pb0ozCS6iwtamx6a4nYplpwSiUHGFrOoCg2mRGEs2VB4xe9hl50Zb1m/aP15Q5FvuphsVDam/JrXMIgVmQjQhNiTKqG5rSJKosaL1BIWSRcWIZZA4iDMCVbSTQnqhP/t99PR8Ro8v68mbPViAldQSvsNz1b+NUX+IlRbLXViLRWvyrnDosJcpeHIAjViNvz6xxF4Xmhv5QwT2z80o4i0BVLMqdQvPjwrebwiYpTOQlgrfymxnZ17/TIS/06cvTZ7Vt++fQDlwA7LVCSq7v5wrCsUGPMQKCUb3KjlfhetNAdEfpo9DEwQrblb/dxmV0hXpqLjDQSMqRqCDxLVlwMzEgAq/g/2hll1RoXCxpJ3REv3VQBa3osdJ2KOUZzP1rdHikGsbKYKuLbNylyiF5VTGYApnKzvwOXLjdz1ixt2o1qQELOHoAJ0Hn+rxsz2gy1jd90O+JKLUodrYGxjR1JZuHCsATuhmnkQXJkrkRmVxnkg4B3CCGZfXepnTfAhJuANdkOWpNN9afACM833MshDrLJJIr6WugDOdoLdNHInbn57UMy2xdHCaLPFJbUQksaGZWLxM2cbGg1P2H9EmoWHcP8Ns7GzDpGd25Xl0veHLSoFcJF2XRcWScQDfawqW2pHeskq/c0Mr6RILjOpBnbBQVX1QJZ8fHGTXQ0MJflKctko+sXesi4wzBQk6XKICp+nhzXzgqUM9UaeHoikVhTfpkPWCvRnT+8wMkEtAJ/mHWTV6hhEay8DhaYjbCoDfsuNfjnR1zWy1kNJvZZdjEciLVXotg4wk2lJBInD3cIwE=";
 
-            String envKey = URLDecoder.decode(bodyEnvKey, StandardCharsets.UTF_8.name());
-            String data = URLDecoder.decode(bodyData, StandardCharsets.UTF_8.name());
+            String privateKey = "...";
 
             System.out.println("envKey: " + envKey);
-            System.out.println("data: " + data);
+            //System.out.println("data: " + data);
 
 
-            Abstract paymentResponse = Abstract.factoryFromEncrypted(envKey, data, data);
+            Abstract paymentResponse = Abstract.factoryFromEncrypted(envKey, data, privateKey);
+
+            if (paymentResponse instanceof ro.mobilPay.payment.request.Card) {
+                Card cardResponse = (Card) paymentResponse;
+                
+            }
         } catch (Exception e) {
             System.out.println("An error occurred: " + e.getMessage());
             e.printStackTrace();
         }
+    }
 
-        
+    public static void parsePaymentResponse(
+        String data, String envKey, String privateKey,
+        String[] action, String[] email, BigDecimal[] processedAmount,
+        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails
+    ) {
+        try {
+            // Check if data, envKey, or privateKey is null
+            if (data == null || envKey == null || privateKey == null) {
+                throw new IllegalArgumentException("data, envKey, and privateKey must not be null");
+            }
+
+            // Log the input parameters (be careful not to log the entire privateKey for security reasons)
+            System.out.println("Data: " + (data != null ? data.substring(0, Math.min(data.length(), 100)) + "..." : "null"));
+            System.out.println("EnvKey: " + (envKey != null ? envKey.substring(0, Math.min(envKey.length(), 100)) + "..." : "null"));
+            System.out.println("PrivateKey: " + (privateKey != null ? "Not null, length: " + privateKey.length() : "null"));
+
+            Abstract paymentResponse = Abstract.factoryFromEncrypted(envKey, data, privateKey);
+
+            if (paymentResponse == null) {
+                throw new Exception("factoryFromEncrypted returned null");
+            }
+
+            if (paymentResponse instanceof ro.mobilPay.payment.request.Card) {
+                Card cardResponse = (Card) paymentResponse;
+
+                Notify mobilpayResponse = cardResponse._objReqNotify;
+                
+                // Extract the required information from cardResponse
+                action[0] = mobilpayResponse._action;
+                email[0] = mobilpayResponse._customer._email;
+                processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
+                crc[0] = mobilpayResponse._crc;
+                errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
+                errorMessage[0] = mobilpayResponse._errorMessage;
+
+                // Log the extracted information
+                System.out.println("Extracted Action: " + action[0]);
+                System.out.println("Extracted Email: " + email[0]);
+                System.out.println("Extracted Processed Amount: " + processedAmount[0]);
+                System.out.println("Extracted CRC: " + crc[0]);
+                System.out.println("Extracted Error Code: " + errorCode[0]);
+                System.out.println("Extracted Error Message: " + errorMessage[0]);
+            } else {
+                throw new Exception("Unexpected payment response type: " + (paymentResponse != null ? paymentResponse.getClass().getName() : "null"));
+            }
+        } catch (IllegalArgumentException e) {
+            // Handle the case where input parameters are null
+            String errorMsg = "Invalid input: " + e.getMessage();
+            System.err.println(errorMsg);
+            javaErrorDetails[0] = errorMsg;
+        } catch (Exception e) {
+            // Capture the full stack trace
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String fullStackTrace = sw.toString();
+
+            String javaError = e.getMessage() + "\n" + fullStackTrace;
+            System.err.println(javaError);
+            javaErrorDetails[0] = javaError;
+        }
     }
 
     public static void preparePaymentRequest(String certificate, String xmlData, Clob[] dataParameter, Clob[] envKeyParameter, String[] errorDetails) {
@@ -131,7 +196,7 @@ public class Main {
             Abstract paymentRequest = Card.factory(xmlData);
 
             if (paymentRequest instanceof ro.mobilPay.payment.request.Card) {
-                Card cardRequest = (ro.mobilPay.payment.request.Card) paymentRequest;
+                Card cardRequest = (Card) paymentRequest;
 
                 ListItem encryptedData = cardRequest.encrypt(certificate);
 
@@ -161,7 +226,7 @@ public class Main {
             e.printStackTrace(pw);
             String fullStackTrace = sw.toString();
 
-            String errorMessage = "Error in preparePaymentRequest: " + e.getMessage() + "\n" + fullStackTrace;
+            String errorMessage = e.getMessage() + "\n" + fullStackTrace;
             System.err.println(errorMessage); // Log to standard error
             errorDetails[0] = errorMessage;
             dataParameter[0] = null;
@@ -261,7 +326,7 @@ public class Main {
     }
 
     // Helper method to convert Clob to String
-    private static String clobToString(Clob clob) throws Exception {
+    public static String clobToString(Clob clob) throws Exception {
         StringBuilder sb = new StringBuilder();
         try (Reader reader = clob.getCharacterStream()) {
             char[] buffer = new char[1024];
