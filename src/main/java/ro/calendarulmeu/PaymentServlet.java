@@ -38,15 +38,11 @@ public class PaymentServlet extends HttpServlet {
     }
 
     private void handleParsePaymentResponse(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+            throws IOException, ServletException {
         String data = request.getParameter("data");
         String envKey = request.getParameter("envKey");
-        String privateKey = request.getParameter("privateKey");
-
-        // Log the input parameters
-        System.out.println("Data: " + (data != null ? data.substring(0, Math.min(data.length(), 100)) + "..." : "null"));
-        System.out.println("EnvKey: " + (envKey != null ? envKey.substring(0, Math.min(envKey.length(), 100)) + "..." : "null"));
-        System.out.println("PrivateKey: " + (privateKey != null ? "Not null, length: " + privateKey.length() : "null"));
+        String encryptedPrivateKey = request.getParameter("encryptedPrivateKey");
+        String secretOcid = request.getParameter("secretOcid");
 
         String[] action = new String[1];
         String[] email = new String[1];
@@ -56,10 +52,25 @@ public class PaymentServlet extends HttpServlet {
         String[] errorMessage = new String[1];
         String[] javaErrorDetails = new String[1];
 
-        if (data == null || envKey == null || privateKey == null) {
-            javaErrorDetails[0] = "One or more required parameters are null. Data: " + (data != null) + ", EnvKey: " + (envKey != null) + ", PrivateKey: " + (privateKey != null);
+        if (data == null || envKey == null || encryptedPrivateKey == null || secretOcid == null) {
+            javaErrorDetails[0] = "One or more required parameters are null. Data: " + (data != null) + ", EnvKey: " + (envKey != null) + ", EncryptedPrivateKey: " + (encryptedPrivateKey != null) + ", SecretOcid: " + (secretOcid != null);
         } else {
-            Main.parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount, crc, errorCode, errorMessage, javaErrorDetails);
+            try {
+                // Directly call the SecretServlet's getSecret method
+                String aesKey = SecretServlet.getSecret(secretOcid);
+
+                if (aesKey == null) {
+                    throw new Exception("Failed to retrieve AES key from SecretServlet");
+                }
+
+                // Decrypt the private key
+                String privateKey = Main.decryptAES(encryptedPrivateKey, aesKey);
+
+                // Now call parsePaymentResponse with the decrypted private key
+                Main.parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount, crc, errorCode, errorMessage, javaErrorDetails);
+            } catch (Exception e) {
+                javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
+            }
         }
 
         ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0], crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0]);
