@@ -15,6 +15,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 
 public class OpenSSL {
     
@@ -52,51 +54,38 @@ public class OpenSSL {
         return li;
     }
 
-    public static String openssl_unseal(String data, String env_key,String prvkey) {
-        try {
-            //String pkey = prvkey.replace("-----BEGIN RSA PRIVATE KEY-----","").replace("-----END RSA PRIVATE KEY-----","").trim();
-            //PKCS8EncodedKeySpec pk = new PKCS8EncodedKeySpec(Base64Decoder.decodeToBytes(pkey));
-            
-            //KeyFactory l_kf = KeyFactory.getInstance("RSA");
-            
-            //RSAPrivateKey rsakey = l_kf.generatePrivate(pk);
-            
-             StringReader sr = new StringReader(prvkey);
-             PEMParser pm = new PEMParser(sr);
-             Object o = pm.readObject();
-             pm.close();
-             Key key ;
-             
-             if (o!=null && o instanceof PEMKeyPair) {
-                 PEMKeyPair kpr = (PEMKeyPair)o;
-                
-                //openssl rsa -inform PEM -in private.key -out private.pem
-                
-                key = BouncyCastleProvider.getPrivateKey(kpr.getPrivateKeyInfo());
-             } else {
-            	 System.err.println("1 ERROR private key probably DER not PEM. user openssl to convert: "+prvkey.toString());
-                 return null;
-             }
-            
-            Cipher ccRSA = Cipher.getInstance("RSA");
-            ccRSA.init(Cipher.DECRYPT_MODE,key);
-            byte[] envb = Base64.decode(env_key);
-            byte[] decrkey = ccRSA.doFinal(envb);
+    public static String openssl_unseal(String data, String env_key, String prvkey) throws Exception {
+        StringReader sr = new StringReader(prvkey);
+        PEMParser pm = new PEMParser(sr);
+        Object o = pm.readObject();
+        pm.close();
+        Key key;
 
-            SecretKeySpec sc = new SecretKeySpec(decrkey,"ARCFOUR");
-            
-            Cipher cc = Cipher.getInstance("ARCFOUR");
-            cc.init(Cipher.DECRYPT_MODE,sc);
-            
-            byte[] ksrc = cc.doFinal(Base64.decode(data));
-           
-            return new String(ksrc);            
-        } catch (Exception e) {
-            String aux = " : data - "+data+"<br/>env_key="+env_key+"<br/>";
-            System.err.println("2 ERROR unseal : "+e.getMessage()+aux);
-            e.printStackTrace();
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
+        if (o instanceof PEMKeyPair) {
+            PEMKeyPair keyPair = (PEMKeyPair) o;
+            key = converter.getPrivateKey(keyPair.getPrivateKeyInfo());
+        } else if (o instanceof PrivateKeyInfo) {
+            PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo) o;
+            key = converter.getPrivateKey(privateKeyInfo);
+        } else {
+            System.err.println("ERROR: Unexpected private key format: " + (o != null ? o.getClass().getName() : "null"));
+            return null;
         }
-        return null;
+
+        Cipher ccRSA = Cipher.getInstance("RSA");
+        ccRSA.init(Cipher.DECRYPT_MODE,key);
+        byte[] envb = Base64.decode(env_key);
+        byte[] decrkey = ccRSA.doFinal(envb);
+
+        SecretKeySpec sc = new SecretKeySpec(decrkey,"ARCFOUR");
+        
+        Cipher cc = Cipher.getInstance("ARCFOUR");
+        cc.init(Cipher.DECRYPT_MODE,sc);
+        
+        byte[] ksrc = cc.doFinal(Base64.decode(data));
+        
+        return new String(ksrc);
     }
 
     public static void extraInit() {
