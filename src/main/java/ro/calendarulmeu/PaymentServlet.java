@@ -14,19 +14,26 @@ import javax.sql.rowset.serial.SerialClob;
 @WebServlet("/payment")
 public class PaymentServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
         
-        if ("parse".equals(action)) {
-            handleParsePaymentResponse(request, response);
-        } else if ("prepare".equals(action)) {
-            handlePreparePaymentRequest(request, response);
-        } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("Invalid action");
+        try {
+            switch (action) {
+                case "parse":
+                    handleParsePaymentResponse(request, response);
+                    break;
+                case "prepare":
+                    handlePreparePaymentRequest(request, response);
+                    break;
+                default:
+                    sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
+            }
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
         }
     }
 
@@ -55,10 +62,8 @@ public class PaymentServlet extends HttpServlet {
             Main.parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount, crc, errorCode, errorMessage, javaErrorDetails);
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        mapper.writeValue(response.getWriter(), new ParseResponseResult(action[0], email[0], processedAmount[0], crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0]));
+        ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0], crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0]);
+        sendJsonResponse(response, result);
     }
 
     private void handlePreparePaymentRequest(HttpServletRequest request, HttpServletResponse response)
@@ -79,10 +84,8 @@ public class PaymentServlet extends HttpServlet {
             String data = Main.clobToString(dataParameter[0]);
             String envKey = Main.clobToString(envKeyParameter[0]);
 
-            ObjectMapper mapper = new ObjectMapper();
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            mapper.writeValue(response.getWriter(), new PrepareRequestResult(data, envKey, errorDetails[0]));
+            PrepareRequestResult result = new PrepareRequestResult(data, envKey, errorDetails[0]);
+            sendJsonResponse(response, result);
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("Error: " + e.getMessage());
@@ -119,5 +122,16 @@ public class PaymentServlet extends HttpServlet {
             this.envKey = envKey;
             this.errorDetails = errorDetails;
         }
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int statusCode, String message) throws IOException {
+        response.setStatus(statusCode);
+        response.getWriter().write(message);
+    }
+
+    private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        mapper.writeValue(response.getWriter(), data);
     }
 }

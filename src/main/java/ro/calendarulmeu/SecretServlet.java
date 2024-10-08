@@ -13,10 +13,26 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Base64;
+import javax.servlet.ServletException;
 
 @WebServlet("/get_secret")
 public class SecretServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    
+    private SecretsClient secretsClient;
+    private ObjectMapper mapper;
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        try {
+            secretsClient = SecretsClient.builder()
+                .build(InstancePrincipalsAuthenticationDetailsProvider.builder().build());
+            mapper = new ObjectMapper();
+        } catch (Exception e) {
+            throw new ServletException("Failed to initialize SecretServlet", e);
+        }
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -28,13 +44,10 @@ public class SecretServlet extends HttpServlet {
             return;
         }
 
-        try (SecretsClient secretsClient = SecretsClient.builder()
-                .build(InstancePrincipalsAuthenticationDetailsProvider.builder().build())) {
-
+        try {
             byte[] secretBytes = retrieveSecret(secretsClient, secretOcid);
             String encodedSecret = Base64.getEncoder().encodeToString(secretBytes);
             
-            ObjectMapper mapper = new ObjectMapper();
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             mapper.writeValue(response.getWriter(), Collections.singletonMap("secret", encodedSecret));
@@ -47,6 +60,14 @@ public class SecretServlet extends HttpServlet {
             response.getWriter().write(errorMessage);
             e.printStackTrace(); // Log the full stack trace
         }
+    }
+
+    @Override
+    public void destroy() {
+        if (secretsClient != null) {
+            secretsClient.close();
+        }
+        super.destroy();
     }
 
     private byte[] retrieveSecret(SecretsClient secretsClient, String secretId) {
