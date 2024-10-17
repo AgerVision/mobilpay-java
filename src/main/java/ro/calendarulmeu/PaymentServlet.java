@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Clob;
 import javax.sql.rowset.serial.SerialClob;
+import java.util.Optional;
 
 @WebServlet("/payment")
 public class PaymentServlet extends HttpServlet {
@@ -43,6 +44,7 @@ public class PaymentServlet extends HttpServlet {
         String envKey = request.getParameter("envKey");
         String encryptedPrivateKey = request.getParameter("encryptedPrivateKey");
         String secretOcid = request.getParameter("secretOcid");
+        String secretVersionStr = request.getParameter("secretVersion");
 
         String[] action = new String[1];
         String[] email = new String[1];
@@ -57,8 +59,17 @@ public class PaymentServlet extends HttpServlet {
             javaErrorDetails[0] = "One or more required parameters are null. Data: " + (data != null) + ", EnvKey: " + (envKey != null) + ", EncryptedPrivateKey: " + (encryptedPrivateKey != null) + ", SecretOcid: " + (secretOcid != null);
         } else {
             try {
-                // Directly call the SecretServlet's getSecret method
-                String aesKey = SecretServlet.getSecret(secretOcid);
+                Optional<Long> secretVersion = Optional.empty();
+                if (secretVersionStr != null && !secretVersionStr.isEmpty()) {
+                    try {
+                        secretVersion = Optional.of(Long.parseLong(secretVersionStr));
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Invalid secret version number: " + secretVersionStr);
+                    }
+                }
+
+                SecretServlet.SecretInfo secretInfo = SecretServlet.getSecret(secretOcid, secretVersion);
+                String aesKey = secretInfo.getContent();
 
                 if (aesKey == null) {
                     throw new Exception("Failed to retrieve AES key from SecretServlet");

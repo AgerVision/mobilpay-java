@@ -3,7 +3,9 @@ package ro.calendarulmeu;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.SecretsClient;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.model.SecretBundle;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
+import java.util.Optional;
 
 public class SecretServlet {
     private static final long serialVersionUID = 1L;
@@ -26,24 +28,51 @@ public class SecretServlet {
         }
     }
 
-    public static String getSecret(String secretOcid) throws Exception {
+    public static SecretInfo getSecret(String secretOcid) throws Exception {
+        return getSecret(secretOcid, Optional.empty());
+    }
+
+    public static SecretInfo getSecret(String secretOcid, Optional<Long> version) throws Exception {
         if (secretsClient == null) {
             initializeSecretsClient();
         }
-        return retrieveSecret(secretsClient, secretOcid);
+        return retrieveSecret(secretsClient, secretOcid, version);
     }
 
-    private static String retrieveSecret(SecretsClient secretsClient, String secretId) {
+    private static SecretInfo retrieveSecret(SecretsClient secretsClient, String secretId, Optional<Long> version) {
+        GetSecretBundleRequest.Builder requestBuilder = GetSecretBundleRequest.builder()
+                .secretId(secretId);
+
+        version.ifPresentOrElse(
+            versionNumber -> requestBuilder.versionNumber(versionNumber),
+            () -> requestBuilder.stage(GetSecretBundleRequest.Stage.Current)
+        );
+
+        SecretBundle secretBundle = secretsClient
+                .getSecretBundle(requestBuilder.build())
+                .getSecretBundle();
+
         Base64SecretBundleContentDetails contentDetails =
-                (Base64SecretBundleContentDetails)
-                        secretsClient
-                                .getSecretBundle(
-                                        GetSecretBundleRequest.builder()
-                                                .secretId(secretId)
-                                                .stage(GetSecretBundleRequest.Stage.Current)
-                                                .build())
-                                .getSecretBundle()
-                                .getSecretBundleContent();
-        return contentDetails.getContent();
+                (Base64SecretBundleContentDetails) secretBundle.getSecretBundleContent();
+
+        return new SecretInfo(contentDetails.getContent(), String.valueOf(secretBundle.getVersionNumber()));
+    }
+
+    public static class SecretInfo {
+        private final String content;
+        private final String version;
+
+        public SecretInfo(String content, String version) {
+            this.content = content;
+            this.version = version;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public String getVersion() {
+            return version;
+        }
     }
 }
