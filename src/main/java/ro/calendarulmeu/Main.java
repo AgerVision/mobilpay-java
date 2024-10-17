@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -19,28 +17,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.io.IOException;
-import java.math.BigDecimal;
 
 import javax.sql.rowset.serial.SerialClob;
 
 import ro.mobilPay.payment.request.Abstract;
 import ro.mobilPay.payment.request.Card;
-import ro.mobilPay.util.ListItem;
-import ro.mobilPay.util.OpenSSL;
-import ro.mobilPay.payment.request.Notify;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.Base64;
 
 public class Main {
-    private static final int GCM_IV_LENGTH = 12;
-    private static final int GCM_TAG_LENGTH = 16;
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Choose an option:");
@@ -67,7 +50,7 @@ public class Main {
                 }
                 String plainText = plainTextBuilder.toString().trim();
                 try {
-                    String encrypted = encryptAES(plainText, encryptKey);
+                    String encrypted = PaymentServlet.encryptAES(plainText, encryptKey);
                     System.out.println("Encrypted text: " + encrypted);
                 } catch (Exception e) {
                     System.out.println("Error during encryption: " + e.getMessage());
@@ -79,7 +62,7 @@ public class Main {
                 System.out.print("Enter the encrypted text: ");
                 String encryptedText = scanner.nextLine().trim();
                 try {
-                    String decrypted = decryptAES(encryptedText, decryptKey);
+                    String decrypted = PaymentServlet.decryptAES(encryptedText, decryptKey);
                     System.out.println("Decrypted text:");
                     System.out.println(decrypted);
                 } catch (Exception e) {
@@ -93,51 +76,6 @@ public class Main {
                 System.out.println("Invalid choice. Please run the program again and enter 1, 2, or 3.");
         }
         scanner.close();
-    }
-
-    public static String encryptAES(String plainText, String aesKey) throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(aesKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, "AES");
-
-        byte[] iv = new byte[GCM_IV_LENGTH];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(iv);
-
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
-
-        byte[] encryptedText = cipher.doFinal(plainText.getBytes("UTF-8"));
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + encryptedText.length);
-        byteBuffer.put(iv);
-        byteBuffer.put(encryptedText);
-        byte[] cipherMessage = byteBuffer.array();
-
-        return Base64.getEncoder().encodeToString(cipherMessage);
-    }
-
-    public static String decryptAES(String encryptedText, String aesKey) throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(aesKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, "AES");
-
-        byte[] decodedCipherMessage = Base64.getDecoder().decode(encryptedText);
-
-        ByteBuffer byteBuffer = ByteBuffer.wrap(decodedCipherMessage);
-        byte[] iv = new byte[GCM_IV_LENGTH];
-        byteBuffer.get(iv);
-        byte[] cipherText = new byte[byteBuffer.remaining()];
-        byteBuffer.get(cipherText);
-
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
-
-        byte[] decryptedText = cipher.doFinal(cipherText);
-
-        return new String(decryptedText, "UTF-8");
     }
 
     private static void testRequestResponse(Scanner scanner) {
@@ -238,115 +176,6 @@ public class Main {
         }
     }
 
-    public static void parsePaymentResponse(
-        String data, String envKey, String privateKey,
-        String[] action, String[] email, BigDecimal[] processedAmount,
-        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId
-    ) {
-        try {
-            // Check if data, envKey, or privateKey is null
-            if (data == null || envKey == null || privateKey == null) {
-                throw new IllegalArgumentException("data, envKey, and privateKey must not be null");
-            }
-
-            Abstract paymentResponse = Abstract.factoryFromEncrypted(envKey, data, privateKey);
-
-            if (paymentResponse == null) {
-                throw new Exception("factoryFromEncrypted returned null");
-            }
-
-            if (paymentResponse instanceof ro.mobilPay.payment.request.Card) {
-                Card cardResponse = (Card) paymentResponse;
-
-                Notify mobilpayResponse = cardResponse._objReqNotify;
-                
-                // Extract the required information from cardResponse
-                orderId[0] = cardResponse._orderId;
-                action[0] = mobilpayResponse._action;
-                email[0] = mobilpayResponse._customer._email;
-                processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
-                crc[0] = mobilpayResponse._crc;
-                errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
-                errorMessage[0] = mobilpayResponse._errorMessage;
-            } else {
-                throw new Exception("Unexpected payment response type: " + (paymentResponse != null ? paymentResponse.getClass().getName() : "null"));
-            }
-        } catch (IllegalArgumentException e) {
-            // Handle the case where input parameters are null
-            String errorMsg = "Invalid input: " + e.getMessage();
-            System.err.println(errorMsg);
-            javaErrorDetails[0] = errorMsg;
-        } catch (Exception e) {
-            // Capture the full stack trace
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String fullStackTrace = sw.toString();
-
-            String javaError = e.getMessage() + "\n" + fullStackTrace;
-            System.err.println(javaError);
-            javaErrorDetails[0] = javaError;
-        }
-    }
-
-    public static void preparePaymentRequest(String certificate, String xmlData, Clob[] dataParameter, Clob[] envKeyParameter, String[] errorDetails) {
-        try {
-            // Initialize Bouncy Castle Provider
-            OpenSSL.extraInit();
-
-            // Use the factory method to create the appropriate Abstract object
-            Abstract paymentRequest = Card.factory(xmlData);
-
-            if (paymentRequest instanceof ro.mobilPay.payment.request.Card) {
-                Card cardRequest = (Card) paymentRequest;
-
-                ListItem encryptedData = cardRequest.encrypt(certificate);
-
-                String envKey = encryptedData.getKey();
-                String data = encryptedData.getVal();
-
-                // Check if data and key are not null
-                if (data == null || envKey == null) {
-                    errorDetails[0] = "Data or key cannot be null";
-                    dataParameter[0] = null;
-                    envKeyParameter[0] = null;
-                    return;
-                }
-
-                // Set the data and envKey parameters, handling different Clob types
-                setClobData(dataParameter, data);
-                setClobData(envKeyParameter, envKey);
-            } else {
-                errorDetails[0] = "Unexpected payment request type";
-                dataParameter[0] = null;
-                envKeyParameter[0] = null;
-            }
-        } catch (Exception e) {
-            // Capture the full stack trace
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String fullStackTrace = sw.toString();
-
-            String errorMessage = e.getMessage() + "\n" + fullStackTrace;
-            System.err.println(errorMessage); // Log to standard error
-            errorDetails[0] = errorMessage;
-            dataParameter[0] = null;
-            envKeyParameter[0] = null;
-        }
-    }
-
-    // Helper method to set Clob data, handling different Clob types
-    private static void setClobData(Clob[] clobArray, String data) throws Exception {
-        if (clobArray[0] instanceof javax.sql.rowset.serial.SerialClob) {
-            // If it's a SerialClob, we need to replace it
-            clobArray[0] = new javax.sql.rowset.serial.SerialClob(data.toCharArray());
-        } else {
-            // For Oracle CLOBs and other Clob implementations, use setString
-            clobArray[0].setString(1, data);
-        }
-    }
-
     public static void initiatePaymentSetClob(String certificate, String xmlData, String paymentUrl, Clob[] responseClob, String[] errorDetails) {
         try {
             Clob[] dataParameter = new Clob[1];
@@ -356,7 +185,7 @@ public class Main {
             envKeyParameter[0] = new javax.sql.rowset.serial.SerialClob(new char[0]);
 
             // Call preparePaymentRequest to get the data and envKey
-            preparePaymentRequest(certificate, xmlData, dataParameter, envKeyParameter, errorDetails);
+            PaymentServlet.preparePaymentRequest(certificate, xmlData, dataParameter, envKeyParameter, errorDetails);
 
             if (dataParameter[0] == null || envKeyParameter[0] == null) {
                 // If preparePaymentRequest failed, errorDetails will already be set
@@ -364,14 +193,11 @@ public class Main {
                 return;
             }
 
-            String data = clobToString(dataParameter[0]);
-            String envKey = clobToString(envKeyParameter[0]);
+            String data = PaymentServlet.clobToString(dataParameter[0]);
+            String envKey = PaymentServlet.clobToString(envKeyParameter[0]);
 
             System.out.println("envKey: " + envKey);
             System.out.println("data: " + data);
-
-            // envKey = "i/TU00pwR1lBhI2i3rL3Dc33fkdDVLWLmyR/xOROjLIowZNsug+OBkoF5SYK/30qx1026E0pbhECztKe6AzyBouZsl2b4zyVVgqS3sBr3dQCjbEJK0mfmBII3IJpd9l6b3a4un1NAskV5matnxlBojxEEB822ixTia51VD5AI94=";
-            // data = "flTQwG73kOnVcid05zwt4P5W6PD8K3kgzvBo+Ll73Pdd7OyCSrVS2N0lLOA/YK9BMq2B9eC+z2BmZPiNPPe2yYHnsUiynAEoVbvQanVTWlP2H0UoyHwKdlEv8hHWkeOFU7cyx1aq+Q6ueWeRjTZ6MhrRXzrxvCJSvtpqKQRKFSUbFxzyGJjoTurRCHS03TcuA1EjPxePV7KcbSui9xXhyankQ71aktVrRxt9x/KBkFLueTOB+6kEL1bGKYCsfoKUWVBYIPpGnsGtCObQELYEJ1IrzNgOwU6RTvUiwD2Ooixge3w593g84Fb8mda1POZiQwri/Ls58g8e4MWxW27dskwMym8FfoykqJ0yZyV4hL0ehLt+asWqIt4FOOg9Uu8inMPK2MPkTADfkMmdEhOlawrg8Es5ghRlcCvZ6wuxZc0g//v5YAcpa9rW6z8pE//Ae9VuF0RhrbU86YDrIFXNJ3xjTXoU86R9fHWep9TtnH3nivYpVlSw9lTxP6MvvxbHWmHA4zelmGbZ4MIobYfnh6wkTyc=";
 
             // URL encode the key and data parameters
             String encodedKeyParam = URLEncoder.encode(envKey, StandardCharsets.UTF_8.name());
@@ -414,30 +240,11 @@ public class Main {
                 responseClob[0] = null; // Handle error appropriately
             }
         } catch (Exception e) {
-            // Capture the full stack trace
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String fullStackTrace = sw.toString();
-
-            String errorMessage = "Error in initiatePaymentSetClob: " + e.getMessage() + "\n" + fullStackTrace;
+            String errorMessage = "Error in initiatePaymentSetClob: " + e.getMessage();
             System.err.println(errorMessage); // Log to standard error
             errorDetails[0] = errorMessage;
             responseClob[0] = null;
         }
-    }
-
-    // Helper method to convert Clob to String
-    public static String clobToString(Clob clob) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        try (Reader reader = clob.getCharacterStream()) {
-            char[] buffer = new char[1024];
-            int chars;
-            while ((chars = reader.read(buffer)) != -1) {
-                sb.append(buffer, 0, chars);
-            }
-        }
-        return sb.toString();
     }
 
     private static String readCertificateFromFile(String filePath) {
