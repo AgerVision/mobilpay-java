@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.sql.rowset.serial.SerialClob;
 
@@ -30,6 +32,7 @@ public class Main {
         System.out.println("1. Encrypt");
         System.out.println("2. Decrypt");
         System.out.println("3. Test request/response");
+        System.out.println("4. Generate new AES key");
         
         int choice = scanner.nextInt();
         scanner.nextLine(); // Consume newline
@@ -72,8 +75,11 @@ public class Main {
             case 3:
                 testRequestResponse(scanner);
                 break;
+            case 4:
+                generateNewAESKey();
+                break;
             default:
-                System.out.println("Invalid choice. Please run the program again and enter 1, 2, or 3.");
+                System.out.println("Invalid choice. Please run the program again and enter 1, 2, 3, or 4.");
         }
         scanner.close();
     }
@@ -255,6 +261,19 @@ public class Main {
             System.err.println("Error reading certificate file: " + e.getMessage());
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private static void generateNewAESKey() {
+        try {
+            SecureRandom secureRandom = new SecureRandom();
+            byte[] key = new byte[32]; // 256 bits
+            secureRandom.nextBytes(key);
+            String encodedKey = Base64.getEncoder().encodeToString(key);
+            System.out.println("New AES key (Base64 encoded):");
+            System.out.println(encodedKey);
+        } catch (Exception e) {
+            System.out.println("Error generating AES key: " + e.getMessage());
         }
     }
 }
