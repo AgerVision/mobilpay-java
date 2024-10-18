@@ -7,7 +7,8 @@ import com.oracle.bmc.secrets.model.SecretBundle;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import java.util.Optional;
 
-public class SecretServlet {
+@SuppressWarnings("unused")
+public class SecretManager {
     private static final long serialVersionUID = 1L;
     
     private static SecretsClient secretsClient;
@@ -55,14 +56,14 @@ public class SecretServlet {
         Base64SecretBundleContentDetails contentDetails =
                 (Base64SecretBundleContentDetails) secretBundle.getSecretBundleContent();
 
-        return new SecretInfo(contentDetails.getContent(), String.valueOf(secretBundle.getVersionNumber()));
+        return new SecretInfo(contentDetails.getContent(), secretBundle.getVersionNumber());
     }
 
     public static class SecretInfo {
         private final String content;
-        private final String version;
+        private final Long version;
 
-        public SecretInfo(String content, String version) {
+        public SecretInfo(String content, Long version) {
             this.content = content;
             this.version = version;
         }
@@ -71,7 +72,7 @@ public class SecretServlet {
             return content;
         }
 
-        public String getVersion() {
+        public Long getVersion() {
             return version;
         }
     }

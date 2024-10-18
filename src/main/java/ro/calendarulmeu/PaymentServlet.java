@@ -72,15 +72,16 @@ public class PaymentServlet extends HttpServlet {
         }
 
         try {
-            SecretServlet.SecretInfo secretInfo = SecretServlet.getSecret(secretOcid);
+            SecretManager.SecretInfo secretInfo = SecretManager.getSecret(secretOcid);
             String aesKey = secretInfo.getContent();
+            Long secretVersion = secretInfo.getVersion();
 
             if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretServlet");
+                throw new Exception("Failed to retrieve AES key from SecretManager");
             }
 
             String encryptedPayload = encryptAES(payload, aesKey);
-            EncryptResult result = new EncryptResult(encryptedPayload);
+            EncryptResult result = new EncryptResult(encryptedPayload, secretVersion);
             sendJsonResponse(response, result);
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error encrypting payload: " + e.getMessage());
@@ -117,11 +118,11 @@ public class PaymentServlet extends HttpServlet {
                     }
                 }
 
-                SecretServlet.SecretInfo secretInfo = SecretServlet.getSecret(secretOcid, secretVersion);
+                SecretManager.SecretInfo secretInfo = SecretManager.getSecret(secretOcid, secretVersion);
                 String aesKey = secretInfo.getContent();
 
                 if (aesKey == null) {
-                    throw new Exception("Failed to retrieve AES key from SecretServlet");
+                    throw new Exception("Failed to retrieve AES key from SecretManager");
                 }
 
                 String privateKey = decryptAES(encryptedPrivateKey, aesKey);
@@ -332,9 +333,11 @@ public class PaymentServlet extends HttpServlet {
     @SuppressWarnings("unused")
     private static class EncryptResult {
         public String encryptedPayload;
+        public Long secretVersion;
 
-        public EncryptResult(String encryptedPayload) {
+        public EncryptResult(String encryptedPayload, Long secretVersion) {
             this.encryptedPayload = encryptedPayload;
+            this.secretVersion = secretVersion;
         }
     }
 
@@ -408,13 +411,13 @@ public class PaymentServlet extends HttpServlet {
                 }
             }
 
-            SecretServlet.SecretInfo secretInfo = secretVersion.isPresent() 
-                ? SecretServlet.getSecret(secretOcid, secretVersion)
-                : SecretServlet.getSecret(secretOcid);
+            SecretManager.SecretInfo secretInfo = secretVersion.isPresent() 
+                ? SecretManager.getSecret(secretOcid, secretVersion)
+                : SecretManager.getSecret(secretOcid);
             String aesKey = secretInfo.getContent();
 
             if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretServlet");
+                throw new Exception("Failed to retrieve AES key from SecretManager");
             }
 
             String decryptedPayload = decryptAES(encryptedPayload, aesKey);
