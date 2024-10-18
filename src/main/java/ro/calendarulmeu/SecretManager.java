@@ -7,26 +7,11 @@ import com.oracle.bmc.secrets.model.SecretBundle;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import java.util.Optional;
 
-@SuppressWarnings("unused")
 public class SecretManager {
     private static final long serialVersionUID = 1L;
-    
-    private static SecretsClient secretsClient;
 
-    static {
-        try {
-            initializeSecretsClient();
-        } catch (Exception e) {
-            // Log the error or handle it appropriately
-            e.printStackTrace();
-        }
-    }
-
-    private static synchronized void initializeSecretsClient() throws Exception {
-        if (secretsClient == null) {
-            secretsClient = SecretsClient.builder()
-                .build(InstancePrincipalsAuthenticationDetailsProvider.builder().build());
-        }
+    private SecretManager() {
+        // Private constructor to prevent instantiation
     }
 
     public static SecretInfo getSecret(String secretOcid) throws Exception {
@@ -34,10 +19,14 @@ public class SecretManager {
     }
 
     public static SecretInfo getSecret(String secretOcid, Optional<Long> version) throws Exception {
-        if (secretsClient == null) {
-            initializeSecretsClient();
+        try (SecretsClient secretsClient = createSecretsClient()) {
+            return retrieveSecret(secretsClient, secretOcid, version);
         }
-        return retrieveSecret(secretsClient, secretOcid, version);
+    }
+
+    private static SecretsClient createSecretsClient() throws Exception {
+        return SecretsClient.builder()
+            .build(InstancePrincipalsAuthenticationDetailsProvider.builder().build());
     }
 
     private static SecretInfo retrieveSecret(SecretsClient secretsClient, String secretId, Optional<Long> version) {
