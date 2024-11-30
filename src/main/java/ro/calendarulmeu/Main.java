@@ -53,7 +53,7 @@ public class Main {
                 }
                 String plainText = plainTextBuilder.toString().trim();
                 try {
-                    String encrypted = PaymentServlet.encryptAES(plainText, encryptKey);
+                    String encrypted = SecretManager.encryptAES(plainText, encryptKey);
                     System.out.println("Encrypted text: " + encrypted);
                 } catch (Exception e) {
                     System.out.println("Error during encryption: " + e.getMessage());
@@ -65,7 +65,7 @@ public class Main {
                 System.out.print("Enter the encrypted text: ");
                 String encryptedText = scanner.nextLine().trim();
                 try {
-                    String decrypted = PaymentServlet.decryptAES(encryptedText, decryptKey);
+                    String decrypted = SecretManager.decryptAES(encryptedText, decryptKey);
                     System.out.println("Decrypted text:");
                     System.out.println(decrypted);
                 } catch (Exception e) {
@@ -172,6 +172,7 @@ public class Main {
             Abstract paymentResponse = Abstract.factoryFromEncrypted(envKey, data, privateKey);
 
             if (paymentResponse instanceof ro.mobilPay.payment.request.Card) {
+                @SuppressWarnings("unused")
                 Card cardResponse = (Card) paymentResponse;
                 // Process cardResponse...
                 System.out.println("Successfully processed card response.");

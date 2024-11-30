@@ -11,13 +11,6 @@ import java.math.BigDecimal;
 import java.sql.Clob;
 import javax.sql.rowset.serial.SerialClob;
 import java.util.Optional;
-import java.util.Base64;
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.PrintWriter;
@@ -26,13 +19,12 @@ import ro.mobilPay.payment.request.Card;
 import ro.mobilPay.payment.request.Notify;
 import ro.mobilPay.util.ListItem;
 import ro.mobilPay.util.OpenSSL;
+import ro.calendarulmeu.SecretManager.SecretInfo;
 
-@WebServlet("/payment")
+@WebServlet("/netopia/payment")
 public class PaymentServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final int GCM_IV_LENGTH = 12;
-    private static final int GCM_TAG_LENGTH = 16;
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -47,44 +39,11 @@ public class PaymentServlet extends HttpServlet {
                 case "prepare":
                     handlePreparePaymentRequest(request, response);
                     break;
-                case "encrypt":
-                    handleEncryptPayload(request, response);
-                    break;
-                case "decrypt":
-                    handleDecryptPayload(request, response);
-                    break;
                 default:
                     sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
             }
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
-        }
-    }
-
-    private void handleEncryptPayload(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        String payload = request.getParameter("payload");
-        String secretOcid = request.getParameter("secretOcid");
-
-        if (payload == null || secretOcid == null) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Payload and secretOcid are required");
-            return;
-        }
-
-        try {
-            SecretManager.SecretInfo secretInfo = SecretManager.getSecret(secretOcid);
-            String aesKey = secretInfo.getContent();
-            Long secretVersion = secretInfo.getVersion();
-
-            if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretManager");
-            }
-
-            String encryptedPayload = encryptAES(payload, aesKey);
-            EncryptResult result = new EncryptResult(encryptedPayload, secretVersion);
-            sendJsonResponse(response, result);
-        } catch (Exception e) {
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error encrypting payload: " + e.getMessage());
         }
     }
 
@@ -118,14 +77,14 @@ public class PaymentServlet extends HttpServlet {
                     }
                 }
 
-                SecretManager.SecretInfo secretInfo = SecretManager.getSecret(secretOcid, secretVersion);
+                SecretInfo secretInfo = SecretManager.getSecret(secretOcid, secretVersion);
                 String aesKey = secretInfo.getContent();
 
                 if (aesKey == null) {
                     throw new Exception("Failed to retrieve AES key from SecretManager");
                 }
 
-                String privateKey = decryptAES(encryptedPrivateKey, aesKey);
+                String privateKey = SecretManager.decryptAES(encryptedPrivateKey, aesKey);
 
                 parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
                 crc, errorCode, errorMessage, javaErrorDetails, orderId);
@@ -163,51 +122,6 @@ public class PaymentServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("Error: " + e.getMessage());
         }
-    }
-
-    public static String encryptAES(String plainText, String aesKey) throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(aesKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, "AES");
-
-        byte[] iv = new byte[GCM_IV_LENGTH];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(iv);
-
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
-
-        byte[] encryptedText = cipher.doFinal(plainText.getBytes("UTF-8"));
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + encryptedText.length);
-        byteBuffer.put(iv);
-        byteBuffer.put(encryptedText);
-        byte[] cipherMessage = byteBuffer.array();
-
-        return Base64.getEncoder().encodeToString(cipherMessage);
-    }
-
-    public static String decryptAES(String encryptedText, String aesKey) throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(aesKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, "AES");
-
-        byte[] decodedCipherMessage = Base64.getDecoder().decode(encryptedText);
-
-        ByteBuffer byteBuffer = ByteBuffer.wrap(decodedCipherMessage);
-        byte[] iv = new byte[GCM_IV_LENGTH];
-        byteBuffer.get(iv);
-        byte[] cipherText = new byte[byteBuffer.remaining()];
-        byteBuffer.get(cipherText);
-
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
-
-        byte[] decryptedText = cipher.doFinal(cipherText);
-
-        return new String(decryptedText, "UTF-8");
     }
 
     public static void parsePaymentResponse(
@@ -331,17 +245,6 @@ public class PaymentServlet extends HttpServlet {
     }
 
     @SuppressWarnings("unused")
-    private static class EncryptResult {
-        public String encryptedPayload;
-        public Long secretVersion;
-
-        public EncryptResult(String encryptedPayload, Long secretVersion) {
-            this.encryptedPayload = encryptedPayload;
-            this.secretVersion = secretVersion;
-        }
-    }
-
-    @SuppressWarnings("unused")
     private static class ParseResponseResult {
         public String action;
         public String email;
@@ -387,53 +290,5 @@ public class PaymentServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         mapper.writeValue(response.getWriter(), data);
-    }
-
-    private void handleDecryptPayload(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        String encryptedPayload = request.getParameter("encryptedPayload");
-        String secretOcid = request.getParameter("secretOcid");
-        String secretVersionStr = request.getParameter("secretVersion");
-
-        if (encryptedPayload == null || secretOcid == null) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "EncryptedPayload and secretOcid are required");
-            return;
-        }
-
-        try {
-            Optional<Long> secretVersion = Optional.empty();
-            if (secretVersionStr != null && !secretVersionStr.isEmpty()) {
-                try {
-                    secretVersion = Optional.of(Long.parseLong(secretVersionStr));
-                } catch (NumberFormatException e) {
-                    sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid secret version number: " + secretVersionStr);
-                    return;
-                }
-            }
-
-            SecretManager.SecretInfo secretInfo = secretVersion.isPresent() 
-                ? SecretManager.getSecret(secretOcid, secretVersion)
-                : SecretManager.getSecret(secretOcid);
-            String aesKey = secretInfo.getContent();
-
-            if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretManager");
-            }
-
-            String decryptedPayload = decryptAES(encryptedPayload, aesKey);
-            DecryptResult result = new DecryptResult(decryptedPayload);
-            sendJsonResponse(response, result);
-        } catch (Exception e) {
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error decrypting payload: " + e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private static class DecryptResult {
-        public String decryptedPayload;
-
-        public DecryptResult(String decryptedPayload) {
-            this.decryptedPayload = decryptedPayload;
-        }
     }
 }
