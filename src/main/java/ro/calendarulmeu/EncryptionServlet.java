@@ -7,8 +7,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
-import ro.calendarulmeu.SecretManager.SecretInfo;
+import ro.calendarulmeu.SecretManager.EncryptResult;
+import ro.calendarulmeu.SecretManager.DecryptResult;
 
 @WebServlet("/encryption/*")
 public class EncryptionServlet extends HttpServlet {
@@ -21,12 +21,21 @@ public class EncryptionServlet extends HttpServlet {
         try {
             String pathInfo = request.getPathInfo();
             
-            if ("/encrypt".equals(pathInfo)) {
-                handleEncrypt(request, response);
-            } else if ("/decrypt".equals(pathInfo)) {
-                handleDecrypt(request, response);
-            } else {
-                sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Invalid endpoint");
+            switch (pathInfo) {
+                case "/encrypt":
+                    handleEncrypt(request, response);
+                    break;
+                case "/decrypt":
+                    handleDecrypt(request, response);
+                    break;
+                case "/encrypt-old":
+                    handleEncryptOld(request, response);
+                    break;
+                case "/decrypt-old":
+                    handleDecryptOld(request, response);
+                    break;
+                default:
+                    sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Invalid endpoint");
             }
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
@@ -36,25 +45,18 @@ public class EncryptionServlet extends HttpServlet {
     private void handleEncrypt(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String payload = request.getParameter("payload");
-        String secretOcid = request.getParameter("secretOcid");
+        String masterKeyId = request.getParameter("masterKeyId");
+        String vaultId = request.getParameter("vaultId");
 
-        if (payload == null || secretOcid == null) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Payload and secretOcid are required");
+        if (payload == null || masterKeyId == null || vaultId == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
+                "Payload, masterKeyId, and vaultId are required");
             return;
         }
 
         try {
-            SecretInfo secretInfo = SecretManager.getSecret(secretOcid);
-            String aesKey = secretInfo.getContent();
-            Long secretVersion = secretInfo.getVersion();
-
-            if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretManager");
-            }
-
-            String encryptedPayload = SecretManager.encryptAES(payload, aesKey);
-            EncryptResult result = new EncryptResult(encryptedPayload, secretVersion);
-            sendJsonResponse(response, result);
+            String encryptedPayload = SecretManager.encryptWithKms(payload, masterKeyId, vaultId);
+            sendJsonResponse(response, new EncryptResult(encryptedPayload, null));
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
                 "Error encrypting payload: " + e.getMessage());
@@ -64,39 +66,70 @@ public class EncryptionServlet extends HttpServlet {
     private void handleDecrypt(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String encryptedPayload = request.getParameter("encryptedPayload");
-        String secretOcid = request.getParameter("secretOcid");
-        String secretVersionStr = request.getParameter("secretVersion");
+        String masterKeyId = request.getParameter("masterKeyId");
+        String vaultId = request.getParameter("vaultId");
 
-        if (encryptedPayload == null || secretOcid == null) {
+        if (encryptedPayload == null || masterKeyId == null || vaultId == null) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
-                "EncryptedPayload and secretOcid are required");
+                "EncryptedPayload, masterKeyId, and vaultId are required");
             return;
         }
 
         try {
-            Optional<Long> secretVersion = Optional.empty();
-            if (secretVersionStr != null && !secretVersionStr.isEmpty()) {
-                try {
-                    secretVersion = Optional.of(Long.parseLong(secretVersionStr));
-                } catch (NumberFormatException e) {
-                    sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
-                        "Invalid secret version number: " + secretVersionStr);
-                    return;
-                }
-            }
+            String decryptedPayload = SecretManager.decryptWithKms(encryptedPayload, masterKeyId, vaultId);
+            sendJsonResponse(response, new DecryptResult(decryptedPayload));
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
+                "Error decrypting payload: " + e.getMessage());
+        }
+    }
 
-            SecretInfo secretInfo = secretVersion.isPresent() 
-                ? SecretManager.getSecret(secretOcid, secretVersion)
-                : SecretManager.getSecret(secretOcid);
-            String aesKey = secretInfo.getContent();
+    private void handleEncryptOld(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String payload = request.getParameter("payload");
+        String secretId = request.getParameter("secretOcid");
 
-            if (aesKey == null) {
-                throw new Exception("Failed to retrieve AES key from SecretManager");
-            }
+        System.out.println("Encrypt-old received parameters:");
+        System.out.println("payload: " + payload);
+        System.out.println("secretOcid: " + secretId);
 
-            String decryptedPayload = SecretManager.decryptAES(encryptedPayload, aesKey);
-            DecryptResult result = new DecryptResult(decryptedPayload);
-            sendJsonResponse(response, result);
+        if (payload == null || secretId == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
+                "Payload and secretOcid are required. Received payload: " + payload + ", secretOcid: " + secretId);
+            return;
+        }
+
+        try {
+            // Get the secret info first to get the version
+            SecretManager.SecretInfo secretInfo = SecretManager.getSecret(secretId);
+            String encryptedPayload = SecretManager.encryptWithSecret(payload, secretId);
+            
+            // Include the version in the response
+            sendJsonResponse(response, new EncryptResult(encryptedPayload, secretInfo.getVersion().toString()));
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
+                "Error encrypting payload: " + e.getMessage());
+        }
+    }
+
+    private void handleDecryptOld(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String encryptedPayload = request.getParameter("encryptedPayload");
+        String secretId = request.getParameter("secretOcid");
+
+        System.out.println("Decrypt-old received parameters:");
+        System.out.println("encryptedPayload: " + encryptedPayload);
+        System.out.println("secretOcid: " + secretId);
+
+        if (encryptedPayload == null || secretId == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
+                "EncryptedPayload and secretOcid are required. Received encryptedPayload: " + encryptedPayload + ", secretOcid: " + secretId);
+            return;
+        }
+
+        try {
+            String decryptedPayload = SecretManager.decryptWithSecret(encryptedPayload, secretId);
+            sendJsonResponse(response, new DecryptResult(decryptedPayload));
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
                 "Error decrypting payload: " + e.getMessage());
@@ -113,26 +146,5 @@ public class EncryptionServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         mapper.writeValue(response.getWriter(), data);
-    }
-
-    private static class EncryptResult {
-        @SuppressWarnings("unused")
-        public String encryptedPayload;
-        @SuppressWarnings("unused")
-        public Long secretVersion;
-
-        public EncryptResult(String encryptedPayload, Long secretVersion) {
-            this.encryptedPayload = encryptedPayload;
-            this.secretVersion = secretVersion;
-        }
-    }
-
-    private static class DecryptResult {
-        @SuppressWarnings("unused")
-        public String decryptedPayload;
-
-        public DecryptResult(String decryptedPayload) {
-            this.decryptedPayload = decryptedPayload;
-        }
     }
 } 
