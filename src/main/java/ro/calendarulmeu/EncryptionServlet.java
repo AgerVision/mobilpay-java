@@ -57,7 +57,7 @@ public class EncryptionServlet extends HttpServlet {
 
         try {
             String encryptedPayload = SecretManager.encryptWithKms(payload, masterKeyId, cryptoEndpoint);
-            sendJsonResponse(response, new EncryptResult(encryptedPayload, null));
+            sendJsonResponse(response, new EncryptResult(encryptedPayload));
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
                 "Error encrypting payload: " + e.getMessage());

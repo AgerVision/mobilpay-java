@@ -134,17 +134,13 @@ public class SecretManager {
 
     public static class EncryptResult {
         private String encryptedData;
-        private String version;
 
-        public EncryptResult(String encryptedData, String version) {
+        public EncryptResult(String encryptedData) {
             this.encryptedData = encryptedData;
-            this.version = version;
         }
 
         public String getEncryptedData() { return encryptedData; }
         public void setEncryptedData(String encryptedData) { this.encryptedData = encryptedData; }
-        public String getVersion() { return version; }
-        public void setVersion(String version) { this.version = version; }
     }
 
     public static class DecryptResult {
