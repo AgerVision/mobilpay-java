@@ -29,57 +29,15 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Choose an option:");
-        System.out.println("1. Encrypt");
-        System.out.println("2. Decrypt");
-        System.out.println("3. Test request/response");
-        System.out.println("4. Generate new AES key");
+        System.out.println("1. Test request/response");
         
         int choice = scanner.nextInt();
         scanner.nextLine(); // Consume newline
 
-        switch (choice) {
-            case 1:
-                System.out.print("Enter the AES key (Base64 encoded): ");
-                String encryptKey = scanner.nextLine().trim();
-                System.out.println("Enter the plaintext to encrypt (type 'END' on a new line to finish):");
-                StringBuilder plainTextBuilder = new StringBuilder();
-                String line;
-                while (scanner.hasNextLine()) {
-                    line = scanner.nextLine();
-                    if (line.equals("END")) {
-                        break;
-                    }
-                    plainTextBuilder.append(line).append("\n");
-                }
-                String plainText = plainTextBuilder.toString().trim();
-                try {
-                    String encrypted = SecretManager.encryptAES(plainText, encryptKey);
-                    System.out.println("Encrypted text: " + encrypted);
-                } catch (Exception e) {
-                    System.out.println("Error during encryption: " + e.getMessage());
-                }
-                break;
-            case 2:
-                System.out.print("Enter the AES key (Base64 encoded): ");
-                String decryptKey = scanner.nextLine().trim();
-                System.out.print("Enter the encrypted text: ");
-                String encryptedText = scanner.nextLine().trim();
-                try {
-                    String decrypted = SecretManager.decryptAES(encryptedText, decryptKey);
-                    System.out.println("Decrypted text:");
-                    System.out.println(decrypted);
-                } catch (Exception e) {
-                    System.out.println("Error during decryption: " + e.getMessage());
-                }
-                break;
-            case 3:
-                testRequestResponse(scanner);
-                break;
-            case 4:
-                generateNewAESKey();
-                break;
-            default:
-                System.out.println("Invalid choice. Please run the program again and enter 1, 2, 3, or 4.");
+        if (choice == 1) {
+            testRequestResponse(scanner);
+        } else {
+            System.out.println("Invalid choice. Please run the program again and enter 1.");
         }
         scanner.close();
     }
@@ -265,6 +223,7 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void generateNewAESKey() {
         try {
             SecureRandom secureRandom = new SecureRandom();

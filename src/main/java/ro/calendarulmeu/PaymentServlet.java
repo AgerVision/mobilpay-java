@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Clob;
 import javax.sql.rowset.serial.SerialClob;
-import java.util.Optional;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.PrintWriter;
@@ -19,7 +18,6 @@ import ro.mobilPay.payment.request.Card;
 import ro.mobilPay.payment.request.Notify;
 import ro.mobilPay.util.ListItem;
 import ro.mobilPay.util.OpenSSL;
-import ro.calendarulmeu.SecretManager.SecretInfo;
 
 @WebServlet("/netopia/payment")
 public class PaymentServlet extends HttpServlet {
@@ -52,8 +50,8 @@ public class PaymentServlet extends HttpServlet {
         String data = request.getParameter("data");
         String envKey = request.getParameter("envKey");
         String encryptedPrivateKey = request.getParameter("encryptedPrivateKey");
-        String secretOcid = request.getParameter("secretOcid");
-        String secretVersionStr = request.getParameter("secretVersion");
+        String masterKeyId = request.getParameter("masterKeyId");
+        String cryptoEndpoint = request.getParameter("cryptoEndpoint");
 
         String[] action = new String[1];
         String[] email = new String[1];
@@ -64,30 +62,14 @@ public class PaymentServlet extends HttpServlet {
         String[] javaErrorDetails = new String[1];
         String[] orderId = new String[1];
 
-        if (data == null || envKey == null || encryptedPrivateKey == null || secretOcid == null) {
-            javaErrorDetails[0] = "One or more required parameters are null. Data: " + (data != null) + ", EnvKey: " + (envKey != null) + ", EncryptedPrivateKey: " + (encryptedPrivateKey != null) + ", SecretOcid: " + (secretOcid != null);
+        if (data == null || envKey == null || encryptedPrivateKey == null || masterKeyId == null || cryptoEndpoint == null) {
+            javaErrorDetails[0] = "One or more required parameters are null";
         } else {
             try {
-                Optional<Long> secretVersion = Optional.empty();
-                if (secretVersionStr != null && !secretVersionStr.isEmpty()) {
-                    try {
-                        secretVersion = Optional.of(Long.parseLong(secretVersionStr));
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Invalid secret version number: " + secretVersionStr);
-                    }
-                }
-
-                SecretInfo secretInfo = SecretManager.getSecret(secretOcid, secretVersion);
-                String aesKey = secretInfo.getContent();
-
-                if (aesKey == null) {
-                    throw new Exception("Failed to retrieve AES key from SecretManager");
-                }
-
-                String privateKey = SecretManager.decryptAES(encryptedPrivateKey, aesKey);
+                String privateKey = SecretManager.decryptWithKms(encryptedPrivateKey, masterKeyId, cryptoEndpoint);
 
                 parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
-                crc, errorCode, errorMessage, javaErrorDetails, orderId);
+                    crc, errorCode, errorMessage, javaErrorDetails, orderId);
             } catch (Exception e) {
                 javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
             }

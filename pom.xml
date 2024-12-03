@@ -59,6 +59,12 @@
             <artifactId>oci-java-sdk-common-httpclient-jersey</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-keymanagement</artifactId>
+            <version>3.34.0</version>
+        </dependency>
+
         <!--<dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-shaded-full</artifactId>
