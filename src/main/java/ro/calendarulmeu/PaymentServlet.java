@@ -61,7 +61,8 @@ public class PaymentServlet extends HttpServlet {
         String[] errorMessage = new String[1];
         String[] javaErrorDetails = new String[1];
         String[] orderId = new String[1];
-
+        String[] purchaseId = new String[1];
+        
         if (data == null || envKey == null || encryptedPrivateKey == null || masterKeyId == null || cryptoEndpoint == null) {
             javaErrorDetails[0] = "One or more required parameters are null";
         } else {
@@ -69,14 +70,14 @@ public class PaymentServlet extends HttpServlet {
                 String privateKey = SecretManager.decryptWithKms(encryptedPrivateKey, masterKeyId, cryptoEndpoint);
 
                 parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
-                    crc, errorCode, errorMessage, javaErrorDetails, orderId);
+                    crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId);
             } catch (Exception e) {
                 javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
             }
         }
 
         ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0],
-            crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0]);
+            crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0], purchaseId[0]);
         sendJsonResponse(response, result);
     }
 
@@ -109,7 +110,7 @@ public class PaymentServlet extends HttpServlet {
     public static void parsePaymentResponse(
         String data, String envKey, String privateKey,
         String[] action, String[] email, BigDecimal[] processedAmount,
-        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId
+        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId, String[] purchaseId
     ) {
         try {
             // Check if data, envKey, or privateKey is null
@@ -133,6 +134,7 @@ public class PaymentServlet extends HttpServlet {
                 action[0] = mobilpayResponse._action;
                 email[0] = mobilpayResponse._customer._email;
                 processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
+                purchaseId[0] = mobilpayResponse._purchaseId;
                 crc[0] = mobilpayResponse._crc;
                 errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
                 errorMessage[0] = mobilpayResponse._errorMessage;
@@ -236,9 +238,9 @@ public class PaymentServlet extends HttpServlet {
         public String errorMessage;
         public String javaErrorDetails;
         public String orderId;
-
+        public String purchaseId;
         public ParseResponseResult(String action, String email, BigDecimal processedAmount,
-            String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId) {
+            String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId, String purchaseId) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
@@ -247,6 +249,7 @@ public class PaymentServlet extends HttpServlet {
             this.errorMessage = errorMessage;
             this.javaErrorDetails = javaErrorDetails;
             this.orderId = orderId;
+            this.purchaseId = purchaseId;
         }
     }
 
