@@ -18,6 +18,7 @@ import ro.mobilPay.payment.request.Card;
 import ro.mobilPay.payment.request.Notify;
 import ro.mobilPay.util.ListItem;
 import ro.mobilPay.util.OpenSSL;
+import java.util.Date;
 
 @WebServlet("/netopia/payment")
 public class PaymentServlet extends HttpServlet {
@@ -62,6 +63,9 @@ public class PaymentServlet extends HttpServlet {
         String[] javaErrorDetails = new String[1];
         String[] orderId = new String[1];
         String[] purchaseId = new String[1];
+        String[] panMasked = new String[1];
+        String[] tokenId = new String[1];
+        Date[] tokenExpirationDate = new Date[1];
         
         if (data == null || envKey == null || encryptedPrivateKey == null || masterKeyId == null || cryptoEndpoint == null) {
             javaErrorDetails[0] = "One or more required parameters are null";
@@ -70,14 +74,15 @@ public class PaymentServlet extends HttpServlet {
                 String privateKey = SecretManager.decryptWithKms(encryptedPrivateKey, masterKeyId, cryptoEndpoint);
 
                 parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
-                    crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId);
+                    crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId, panMasked, tokenId, tokenExpirationDate);
             } catch (Exception e) {
                 javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
             }
         }
 
         ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0],
-            crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0], purchaseId[0]);
+            crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0], purchaseId[0],
+            panMasked[0], tokenId[0], tokenExpirationDate[0]);
         sendJsonResponse(response, result);
     }
 
@@ -110,7 +115,8 @@ public class PaymentServlet extends HttpServlet {
     public static void parsePaymentResponse(
         String data, String envKey, String privateKey,
         String[] action, String[] email, BigDecimal[] processedAmount,
-        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId, String[] purchaseId
+        String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId,
+        String[] purchaseId, String[] panMasked, String[] tokenId, Date[] tokenExpirationDate
     ) {
         try {
             // Check if data, envKey, or privateKey is null
@@ -129,12 +135,14 @@ public class PaymentServlet extends HttpServlet {
 
                 Notify mobilpayResponse = cardResponse._objReqNotify;
                 
-                // Extract the required information from cardResponse
                 orderId[0] = cardResponse._orderId;
                 action[0] = mobilpayResponse._action;
                 email[0] = mobilpayResponse._customer._email;
                 processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
                 purchaseId[0] = mobilpayResponse._purchaseId;
+                panMasked[0] = mobilpayResponse._pan_masked;
+                tokenId[0] = mobilpayResponse._tokenId;
+                tokenExpirationDate[0] = mobilpayResponse._tokenExpirationDate;
                 crc[0] = mobilpayResponse._crc;
                 errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
                 errorMessage[0] = mobilpayResponse._errorMessage;
@@ -239,8 +247,13 @@ public class PaymentServlet extends HttpServlet {
         public String javaErrorDetails;
         public String orderId;
         public String purchaseId;
+        public String panMasked;
+        public String tokenId;
+        public Date tokenExpirationDate;
+
         public ParseResponseResult(String action, String email, BigDecimal processedAmount,
-            String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId, String purchaseId) {
+            String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId,
+            String purchaseId, String panMasked, String tokenId, Date tokenExpirationDate) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
@@ -250,6 +263,9 @@ public class PaymentServlet extends HttpServlet {
             this.javaErrorDetails = javaErrorDetails;
             this.orderId = orderId;
             this.purchaseId = purchaseId;
+            this.panMasked = panMasked;
+            this.tokenId = tokenId;
+            this.tokenExpirationDate = tokenExpirationDate;
         }
     }
 
