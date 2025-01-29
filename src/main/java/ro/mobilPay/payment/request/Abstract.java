@@ -176,12 +176,22 @@ public abstract class Abstract {
 	}
 	
 	static public Abstract factoryFromEncrypted(String _envKey, String _encData, String _privateKey) throws Exception{
-		
-		//String prvkey=null;
-		
 		String data = OpenSSL.openssl_unseal(_encData, _envKey, _privateKey);
-		System.out.println("data is :"+data);
+		// Obfuscate sensitive data before logging
+		String maskedData = maskSensitiveData(data);
+		System.out.println("data is:" + maskedData);
 		return Abstract.factory(data);
+	}
+	
+	private static String maskSensitiveData(String xml) {
+		if (xml == null || xml.isEmpty()) {
+			return xml;
+		}
+		// Mask signature
+		xml = xml.replaceAll("<signature>([^<]{5}).*?</signature>", "<signature>$1...MASKED</signature>");
+		// Mask token_id
+		xml = xml.replaceAll("<token_id>([^<]{5}).*?</token_id>", "<token_id>$1...MASKED</token_id>");
+		return xml;
 	}
 	
 	protected void _setRequestInfo(int _reqVersion, String _reqData)
