@@ -34,6 +34,7 @@ public class Notify {
 	public int _current_payment_count = 0;
 	public String _token_id = null;
 	public String _token_expiration_date = null;
+	public String _master_client_external_id = null;
 	
 	public Notify (){
 		
@@ -102,6 +103,25 @@ public class Notify {
 				this._errorCode = Integer.parseInt(n.getTextContent());
 			
 			this._errorMessage = tmpNode.getNodeValue();
+		}
+		
+		// Find the parent 'order' element to look for params
+		Element orderElement = (Element) elem.getParentNode();
+		if (orderElement != null) {
+			tmpList = orderElement.getElementsByTagName("params");
+			if(tmpList.getLength() == 1) {
+				NodeList paramsList = ((Element)tmpList.item(0)).getElementsByTagName("param");
+				for(int i = 0; i < paramsList.getLength(); i++) {
+					Element paramElem = (Element)paramsList.item(i);
+					NodeList nameList = paramElem.getElementsByTagName("name");
+					if(nameList.getLength() == 1 && "master_client_external_id".equals(nameList.item(0).getTextContent())) {
+						NodeList valueList = paramElem.getElementsByTagName("value");
+						if(valueList.getLength() == 1) {
+							this._master_client_external_id = valueList.item(0).getTextContent();
+						}
+					}
+				}
+			}
 		}
 		
 		return true;

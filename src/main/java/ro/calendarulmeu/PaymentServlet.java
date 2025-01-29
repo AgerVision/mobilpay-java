@@ -66,6 +66,7 @@ public class PaymentServlet extends HttpServlet {
         String[] panMasked = new String[1];
         String[] tokenId = new String[1];
         String[] tokenExpirationDate = new String[1];
+        String[] masterClientExternalId = new String[1];
         
         if (data == null || envKey == null || encryptedPrivateKey == null || masterKeyId == null || cryptoEndpoint == null) {
             javaErrorDetails[0] = "One or more required parameters are null";
@@ -74,7 +75,8 @@ public class PaymentServlet extends HttpServlet {
                 String privateKey = SecretManager.decryptWithKms(encryptedPrivateKey, masterKeyId, cryptoEndpoint);
 
                 parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
-                    crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId, panMasked, tokenId, tokenExpirationDate);
+                    crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId, panMasked,
+                    tokenId, tokenExpirationDate, masterClientExternalId);
             } catch (Exception e) {
                 javaErrorDetails[0] = "Error processing payment response: " + e.getMessage();
             }
@@ -82,7 +84,7 @@ public class PaymentServlet extends HttpServlet {
 
         ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0],
             crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0], purchaseId[0],
-            panMasked[0], tokenId[0], tokenExpirationDate[0]);
+            panMasked[0], tokenId[0], tokenExpirationDate[0], masterClientExternalId[0]);
         sendJsonResponse(response, result);
     }
 
@@ -116,7 +118,7 @@ public class PaymentServlet extends HttpServlet {
         String data, String envKey, String privateKey,
         String[] action, String[] email, BigDecimal[] processedAmount,
         String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId,
-        String[] purchaseId, String[] panMasked, String[] tokenId, String[] tokenExpirationDate
+        String[] purchaseId, String[] panMasked, String[] tokenId, String[] tokenExpirationDate, String[] masterClientExternalId
     ) {
         try {
             // Check if data, envKey, or privateKey is null
@@ -143,6 +145,7 @@ public class PaymentServlet extends HttpServlet {
                 panMasked[0] = mobilpayResponse._pan_masked;
                 tokenId[0] = mobilpayResponse._token_id;
                 tokenExpirationDate[0] = mobilpayResponse._token_expiration_date;
+                masterClientExternalId[0] = mobilpayResponse._master_client_external_id;
                 crc[0] = mobilpayResponse._crc;
                 errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
                 errorMessage[0] = mobilpayResponse._errorMessage;
@@ -250,10 +253,11 @@ public class PaymentServlet extends HttpServlet {
         public String panMasked;
         public String tokenId;
         public String tokenExpirationDate;
+        public String masterClientExternalId;
 
         public ParseResponseResult(String action, String email, BigDecimal processedAmount,
             String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId,
-            String purchaseId, String panMasked, String tokenId, String tokenExpirationDate) {
+            String purchaseId, String panMasked, String tokenId, String tokenExpirationDate, String masterClientExternalId) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
@@ -266,6 +270,7 @@ public class PaymentServlet extends HttpServlet {
             this.panMasked = panMasked;
             this.tokenId = tokenId;
             this.tokenExpirationDate = tokenExpirationDate;
+            this.masterClientExternalId = masterClientExternalId;
         }
     }
 
