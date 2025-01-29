@@ -32,8 +32,8 @@ public class Notify {
 	public String _pan_masked	= null;
 	public int _payment_instrument_id = 0;
 	public int _current_payment_count = 0;
-	public String _tokenId = null;
-	public Date _tokenExpirationDate = null;
+	public String _token_id = null;
+	public String _token_expiration_date = null;
 	
 	public Notify (){
 		
@@ -77,16 +77,13 @@ public class Notify {
 		if(tmpList.getLength() == 1)
 			this._pan_masked = tmpList.item(0).getTextContent();
 
+		tmpList = elem.getElementsByTagName("token_expiration_date");
+		if(tmpList.getLength() == 1)
+			this._token_expiration_date = tmpList.item(0).getTextContent();
+
 		tmpList = elem.getElementsByTagName("token_id");
 		if(tmpList.getLength() == 1)
-			this._tokenId = tmpList.item(0).getTextContent();
-
-		tmpList = elem.getElementsByTagName("token_expiration_date");
-		if(tmpList.getLength() == 1) {
-			String dateStr = tmpList.item(0).getTextContent();
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			this._tokenExpirationDate = sdf.parse(dateStr);
-		}
+			this._token_id = tmpList.item(0).getTextContent();
 		
 	 	tmpNode = elem.getAttributes().getNamedItem("current_payment_count");
     	if(tmpNode != null)

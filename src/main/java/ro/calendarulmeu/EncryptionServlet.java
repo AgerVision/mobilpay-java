@@ -47,7 +47,7 @@ public class EncryptionServlet extends HttpServlet {
         String masterKeyId = request.getParameter("masterKeyId");
         String cryptoEndpoint = request.getParameter("cryptoEndpoint");
 
-        System.out.println("Received payload for encryption: " + payload);
+        //System.out.println("Received payload for encryption: " + payload);
 
         if (payload == null || masterKeyId == null || cryptoEndpoint == null) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, 
@@ -80,7 +80,7 @@ public class EncryptionServlet extends HttpServlet {
 
         try {
             String decryptedPayload = SecretManager.decryptWithKms(encryptedPayload, masterKeyId, cryptoEndpoint);
-            System.out.println("Decrypted payload: " + decryptedPayload);
+            //System.out.println("Decrypted payload: " + decryptedPayload);
             sendJsonResponse(response, new DecryptResult(decryptedPayload));
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 

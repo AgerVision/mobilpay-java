@@ -65,7 +65,7 @@ public class PaymentServlet extends HttpServlet {
         String[] purchaseId = new String[1];
         String[] panMasked = new String[1];
         String[] tokenId = new String[1];
-        Date[] tokenExpirationDate = new Date[1];
+        String[] tokenExpirationDate = new String[1];
         
         if (data == null || envKey == null || encryptedPrivateKey == null || masterKeyId == null || cryptoEndpoint == null) {
             javaErrorDetails[0] = "One or more required parameters are null";
@@ -116,7 +116,7 @@ public class PaymentServlet extends HttpServlet {
         String data, String envKey, String privateKey,
         String[] action, String[] email, BigDecimal[] processedAmount,
         String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId,
-        String[] purchaseId, String[] panMasked, String[] tokenId, Date[] tokenExpirationDate
+        String[] purchaseId, String[] panMasked, String[] tokenId, String[] tokenExpirationDate
     ) {
         try {
             // Check if data, envKey, or privateKey is null
@@ -141,8 +141,8 @@ public class PaymentServlet extends HttpServlet {
                 processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
                 purchaseId[0] = mobilpayResponse._purchaseId;
                 panMasked[0] = mobilpayResponse._pan_masked;
-                tokenId[0] = mobilpayResponse._tokenId;
-                tokenExpirationDate[0] = mobilpayResponse._tokenExpirationDate;
+                tokenId[0] = mobilpayResponse._token_id;
+                tokenExpirationDate[0] = mobilpayResponse._token_expiration_date;
                 crc[0] = mobilpayResponse._crc;
                 errorCode[0] = new BigDecimal(mobilpayResponse._errorCode);
                 errorMessage[0] = mobilpayResponse._errorMessage;
@@ -249,11 +249,11 @@ public class PaymentServlet extends HttpServlet {
         public String purchaseId;
         public String panMasked;
         public String tokenId;
-        public Date tokenExpirationDate;
+        public String tokenExpirationDate;
 
         public ParseResponseResult(String action, String email, BigDecimal processedAmount,
             String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId,
-            String purchaseId, String panMasked, String tokenId, Date tokenExpirationDate) {
+            String purchaseId, String panMasked, String tokenId, String tokenExpirationDate) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
