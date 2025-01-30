@@ -56,6 +56,7 @@ public class PaymentServlet extends HttpServlet {
         String[] action = new String[1];
         String[] email = new String[1];
         BigDecimal[] processedAmount = new BigDecimal[1];
+        BigDecimal[] originalAmount = new BigDecimal[1];
         String[] crc = new String[1];
         BigDecimal[] errorCode = new BigDecimal[1];
         String[] errorMessage = new String[1];
@@ -73,7 +74,7 @@ public class PaymentServlet extends HttpServlet {
             try {
                 String privateKey = SecretManager.decryptWithKms(encryptedPrivateKey, masterKeyId, cryptoEndpoint);
 
-                parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount,
+                parsePaymentResponse(data, envKey, privateKey, action, email, processedAmount, originalAmount,
                     crc, errorCode, errorMessage, javaErrorDetails, orderId, purchaseId, panMasked,
                     tokenId, tokenExpirationDate, masterClientExternalId);
             } catch (Exception e) {
@@ -81,7 +82,7 @@ public class PaymentServlet extends HttpServlet {
             }
         }
 
-        ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0],
+        ParseResponseResult result = new ParseResponseResult(action[0], email[0], processedAmount[0], originalAmount[0],
             crc[0], errorCode[0], errorMessage[0], javaErrorDetails[0], orderId[0], purchaseId[0],
             panMasked[0], tokenId[0], tokenExpirationDate[0], masterClientExternalId[0]);
         sendJsonResponse(response, result);
@@ -115,7 +116,7 @@ public class PaymentServlet extends HttpServlet {
 
     public static void parsePaymentResponse(
         String data, String envKey, String privateKey,
-        String[] action, String[] email, BigDecimal[] processedAmount,
+        String[] action, String[] email, BigDecimal[] processedAmount, BigDecimal[] originalAmount,
         String[] crc, BigDecimal[] errorCode, String[] errorMessage, String[] javaErrorDetails, String[] orderId,
         String[] purchaseId, String[] panMasked, String[] tokenId, String[] tokenExpirationDate, String[] masterClientExternalId
     ) {
@@ -140,6 +141,7 @@ public class PaymentServlet extends HttpServlet {
                 action[0] = mobilpayResponse._action;
                 email[0] = mobilpayResponse._customer._email;
                 processedAmount[0] = BigDecimal.valueOf(mobilpayResponse._processedAmount);
+                originalAmount[0] = BigDecimal.valueOf(mobilpayResponse._originalAmount);
                 purchaseId[0] = mobilpayResponse._purchaseId;
                 panMasked[0] = mobilpayResponse._pan_masked;
                 tokenId[0] = mobilpayResponse._token_id;
@@ -243,6 +245,7 @@ public class PaymentServlet extends HttpServlet {
         public String action;
         public String email;
         public BigDecimal processedAmount;
+        public BigDecimal originalAmount;
         public String crc;
         public BigDecimal errorCode;
         public String errorMessage;
@@ -254,12 +257,13 @@ public class PaymentServlet extends HttpServlet {
         public String tokenExpirationDate;
         public String masterClientExternalId;
 
-        public ParseResponseResult(String action, String email, BigDecimal processedAmount,
+        public ParseResponseResult(String action, String email, BigDecimal processedAmount, BigDecimal originalAmount,
             String crc, BigDecimal errorCode, String errorMessage, String javaErrorDetails, String orderId,
             String purchaseId, String panMasked, String tokenId, String tokenExpirationDate, String masterClientExternalId) {
             this.action = action;
             this.email = email;
             this.processedAmount = processedAmount;
+            this.originalAmount = originalAmount;
             this.crc = crc;
             this.errorCode = errorCode;
             this.errorMessage = errorMessage;
