@@ -4,7 +4,7 @@ import org.w3c.dom.Element;
 
 
 public class SMS extends Abstract {
-	private static final int ERROR_LOAD_FROM_XML_SERVICE_ELEM_MISSING		= 0x31000001;
+	// private static final int ERROR_LOAD_FROM_XML_SERVICE_ELEM_MISSING		= 0x31000001;
 	public String _msisdn		= null;
 	
 	public SMS () {

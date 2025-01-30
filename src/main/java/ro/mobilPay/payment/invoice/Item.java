@@ -7,8 +7,8 @@ import org.w3c.dom.NodeList;
 
 public class Item {
 
-	private static final int ERROR_INVALID_PARAMETER		= 0x11111001;
-	private static final int ERROR_INVALID_PROPERTY			= 0x11110002;
+	// private static final int ERROR_INVALID_PARAMETER		= 0x11111001;
+	// private static final int ERROR_INVALID_PROPERTY			= 0x11110002;
 	
 	private static final int ERROR_LOAD_FROM_XML_CODE_ELEM_MISSING		= 0x40000001;
 	private static final int ERROR_LOAD_FROM_XML_NAME_ELEM_MISSING		= 0x40000002;

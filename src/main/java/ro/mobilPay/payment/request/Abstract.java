@@ -41,8 +41,8 @@ public abstract class Abstract {
 	public static final int CONFIRM_ERROR_TYPE_TEMPORARY	= 0x01;
 	public static final int CONFIRM_ERROR_TYPE_PERMANENT	= 0x02;
 
-	private static final int ERROR_LOAD_X509_CERTIFICATE	= 0x10000001;
-	private static final int ERROR_ENCRYPT_DATA			= 0x10000002;
+	// private static final int ERROR_LOAD_X509_CERTIFICATE	= 0x10000001;
+	// private static final int ERROR_ENCRYPT_DATA			= 0x10000002;
 	
 	protected static final int ERROR_PREPARE_MANDATORY_PROPERTIES_UNSET	= 0x11000001;
 	
@@ -53,12 +53,12 @@ public abstract class Abstract {
 	private final int ERROR_LOAD_FROM_XML_ORDER_ID_ATTR_MISSING			= 0x30000001;
 	private final static int ERROR_LOAD_FROM_XML_SIGNATURE_ELEM_MISSING		= 0x30000002;
 	
-	private final static int ERROR_CONFIRM_LOAD_PRIVATE_KEY					= 0x300000f0;
-	private final static int ERROR_CONFIRM_FAILED_DECODING_DATA				= 0x300000f1;
-	private final static int ERROR_CONFIRM_FAILED_DECODING_ENVELOPE_KEY		= 0x300000f2;
-	private final static int ERROR_CONFIRM_FAILED_DECRYPT_DATA					= 0x300000f3;
-	private final static int ERROR_CONFIRM_INVALID_POST_METHOD					= 0x300000f4;
-	private final static int ERROR_CONFIRM_INVALID_POST_PARAMETERS				= 0x300000f5;
+	// private final static int ERROR_CONFIRM_LOAD_PRIVATE_KEY					= 0x300000f0;
+	// private final static int ERROR_CONFIRM_FAILED_DECODING_DATA				= 0x300000f1;
+	// private final static int ERROR_CONFIRM_FAILED_DECODING_ENVELOPE_KEY		= 0x300000f2;
+	// private final static int ERROR_CONFIRM_FAILED_DECRYPT_DATA					= 0x300000f3;
+	// private final static int ERROR_CONFIRM_INVALID_POST_METHOD					= 0x300000f4;
+	// private final static int ERROR_CONFIRM_INVALID_POST_PARAMETERS				= 0x300000f5;
 	public final static int ERROR_CONFIRM_INVALID_ACTION						= 0x300000f6;
 
 	private static final int VERSION_QUERY_STRING	= 0x01;

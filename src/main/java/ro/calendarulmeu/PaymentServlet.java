@@ -18,7 +18,6 @@ import ro.mobilPay.payment.request.Card;
 import ro.mobilPay.payment.request.Notify;
 import ro.mobilPay.util.ListItem;
 import ro.mobilPay.util.OpenSSL;
-import java.util.Date;
 
 @WebServlet("/netopia/payment")
 public class PaymentServlet extends HttpServlet {

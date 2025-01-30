@@ -18,7 +18,7 @@ import ro.mobilPay.util.MD5;
 
 public class Notify {
 	private final int ERROR_LOAD_FROM_XML_CRC_ATTR_MISSING		= 0x60000001;
-	private final int ERROR_LOAD_FROM_XML_ACTION_ELEM_MISSING	= 0x60000002;
+	// private final int ERROR_LOAD_FROM_XML_ACTION_ELEM_MISSING	= 0x60000002;
 	
 	public String _purchaseId		= null;
 	public String _action			= null;

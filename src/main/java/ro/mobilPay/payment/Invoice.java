@@ -11,9 +11,9 @@ import ro.mobilPay.payment.invoice.Item;
 
 public class Invoice {
 	
-	private static final int ERROR_INVALID_PARAMETER			= 0x11110001;
+	// private static final int ERROR_INVALID_PARAMETER			= 0x11110001;
 	private static final int ERROR_INVALID_CURRENCY			= 0x11110002;
-	private static final int ERROR_ITEM_INSERT_INVALID_INDEX	= 0x11110003;
+	//private static final int ERROR_ITEM_INSERT_INVALID_INDEX	= 0x11110003;
 	private static final int ERROR_LOAD_FROM_XML_CURRENCY_ATTR_MISSING	= 0x31110001;
 
 	public String _currency				= null;
@@ -21,6 +21,8 @@ public class Invoice {
 	public String _details				= null;
 	public int _installments			= 1;
 	public int _selectedInstallments	= 1;
+	public String _customerId			= null;
+	public String _tokenId				= null;
 	
 	
 	protected Address _billingAddress	= null;
@@ -55,7 +57,14 @@ public class Invoice {
 		attr = _elem.getAttributes().getNamedItem("selected_installments");
 		if(attr != null)
 			this._selectedInstallments = Integer.parseInt(attr.getNodeValue());
+
+		attr = _elem.getAttributes().getNamedItem("customer_id");
+		if(attr != null)
+			this._customerId = new String (attr.getNodeValue());
 		
+		attr = _elem.getAttributes().getNamedItem("token_id");
+		if(attr != null)
+			this._tokenId = new String (attr.getNodeValue());
 		
 		NodeList elems = _elem.getElementsByTagName("details");
 		if(elems.getLength() == 1) {
@@ -130,6 +139,15 @@ public class Invoice {
 
 			
 		}
+
+		if(this._customerId != null) {
+			xmlInvElem.setAttribute("customer_id",this._customerId);
+		}
+
+		if(this._tokenId != null) {
+			xmlInvElem.setAttribute("token_id",this._tokenId);
+		}
+
 		Element xmlElem,xmlAddr;
 		
 		if(this._details != null) {
