@@ -12,12 +12,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ro.mobilPay.payment.Invoice;
+import ro.mobilPay.payment.Split;
 
 
 public class Card extends Abstract {
 	
 	private final int ERROR_LOAD_FROM_XML_ORDER_INVOICE_ELEM_MISSING	= 0x30000001;
 	public Invoice _invoice = null;
+	public Split _split = null;
 	
 	public Card () {
 		
@@ -51,6 +53,15 @@ public class Card extends Abstract {
 		//set invoice
 		xmlElem = this._invoice.createXMLElement(this._xmlDoc);
 		rootElem.appendChild(xmlElem);
+		
+		if (this._split != null) {
+			Element splitElem = this._xmlDoc.createElement("split");
+			Element[] destElems = this._split.createXMLElement(this._xmlDoc);
+			for (Element destElem : destElems) {
+				splitElem.appendChild(destElem);
+			}
+			rootElem.appendChild(splitElem);
+		}
 		
 		if(this._objRequestParams != null && !this._objRequestParams.isEmpty()){
 			Element xmlParams = this._xmlDoc.createElement("params");
@@ -99,6 +110,11 @@ public class Card extends Abstract {
 			throw new Exception("Mobilpay_Payment_Request_Card::loadFromXml failed; invoice element is missing "+ this.ERROR_LOAD_FROM_XML_ORDER_INVOICE_ELEM_MISSING);
 		}
 		this._invoice = new Invoice((Element) elems.item(0));
+		
+		NodeList splitElems = _elem.getElementsByTagName("split");
+		if (splitElems.getLength() == 1) {
+			this._split = new Split((Element) splitElems.item(0));
+		}
 		return true;
 	}
 	

@@ -179,7 +179,7 @@ public abstract class Abstract {
 		String data = OpenSSL.openssl_unseal(_encData, _envKey, _privateKey);
 		// Obfuscate sensitive data before logging
 		String maskedData = maskSensitiveData(data);
-		System.out.println("data is:" + maskedData);
+		System.out.println("decrypted data: " + maskedData);
 		return Abstract.factory(data);
 	}
 	
@@ -345,7 +345,10 @@ public abstract class Abstract {
 		transformer.transform(source, result);
 		writer.close();
 		String srcData = writer.toString();
-		//System.out.println("srcData:\n"+srcData);
+
+		String maskedData = maskSensitiveData(srcData);
+		System.out.println("data to be encrypted: " + maskedData);
+		
 		return OpenSSL.openssl_seal(_certificateAsString, srcData);
 	}
 
