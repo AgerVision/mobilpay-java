@@ -121,7 +121,7 @@ public class Address {
 	    	if(this._type == null) {
 	    		throw new Exception("ERROR TYPE "+this.ERROR_INVALID_ADDRESS_TYPE);
 	    	}
-	    	if(this._type != this.TYPE_COMPANY && this._type != this.TYPE_PERSON)
+	    	if(!this._type.equals(this.TYPE_COMPANY) && !this._type.equals(this.TYPE_PERSON))
 	    		throw new Exception("ERROR TYPE VALUE "+this.ERROR_INVALID_ADDRESS_TYPE_VALUE);
 	    	
 
