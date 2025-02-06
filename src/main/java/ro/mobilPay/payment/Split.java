@@ -9,12 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class implements the functionality provided by Mobilpay_Payment_Split in PHP.
- * It loads the destination splits from XML and can generate XML elements for each destination.
+ * This class loads the destination splits from XML and can generate XML elements for each destination.
  */
 public class Split {
 
-    // Error code constants (mimicking the PHP error codes)
     public static final int ERROR_INVALID_PARAMETER = 0x11110001;
     public static final int ERROR_INVALID_INTERVAL_DAY = 0x11110002;
     public static final int ERROR_INVALID_PAYMENTS_NO = 0x11110003;
@@ -45,7 +43,6 @@ public class Split {
 
     /**
      * Reads the <destination> nodes from the provided XML element.
-     * The method mimics the PHP behavior by processing destinations only if the node list length is greater than 1.
      *
      * @param elem The XML element.
      * @return true if processing was successful.
