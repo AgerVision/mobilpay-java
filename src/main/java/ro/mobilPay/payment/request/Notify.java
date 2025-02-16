@@ -35,6 +35,7 @@ public class Notify {
 	public String _token_id = null;
 	public String _token_expiration_date = null;
 	public String _master_client_external_id = null;
+	public String _subscription_external_id = null;
 	
 	public Notify (){
 		
@@ -114,10 +115,18 @@ public class Notify {
 				for(int i = 0; i < paramsList.getLength(); i++) {
 					Element paramElem = (Element)paramsList.item(i);
 					NodeList nameList = paramElem.getElementsByTagName("name");
-					if(nameList.getLength() == 1 && "master_client_external_id".equals(nameList.item(0).getTextContent())) {
-						NodeList valueList = paramElem.getElementsByTagName("value");
-						if(valueList.getLength() == 1) {
-							this._master_client_external_id = valueList.item(0).getTextContent();
+					if(nameList.getLength() == 1) {
+						String paramName = nameList.item(0).getTextContent();
+						if("master_client_external_id".equals(paramName)) {
+							NodeList valueList = paramElem.getElementsByTagName("value");
+							if(valueList.getLength() == 1) {
+								this._master_client_external_id = valueList.item(0).getTextContent();
+							}
+						} else if("subscription_external_id".equals(paramName)) {
+							NodeList valueList = paramElem.getElementsByTagName("value");
+							if(valueList.getLength() == 1) {
+								this._subscription_external_id = valueList.item(0).getTextContent();
+							}
 						}
 					}
 				}
