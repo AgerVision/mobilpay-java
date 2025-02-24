@@ -36,6 +36,7 @@ public class Notify {
 	public String _token_expiration_date = null;
 	public String _master_client_external_id = null;
 	public String _subscription_external_id = null;
+	public String _billing_result_external_id = null;
 	public String _save_card_token = null;
 	
 	public Notify (){
@@ -128,7 +129,13 @@ public class Notify {
 							if(valueList.getLength() == 1) {
 								this._subscription_external_id = valueList.item(0).getTextContent();
 							}
-						} else if("save_card_token".equals(paramName)) {
+						} else if("billing_result_external_id".equals(paramName)) {
+							NodeList valueList = paramElem.getElementsByTagName("value");
+							if(valueList.getLength() == 1) {
+								this._billing_result_external_id = valueList.item(0).getTextContent();
+							}
+						}
+						else if("save_card_token".equals(paramName)) {
 							NodeList valueList = paramElem.getElementsByTagName("value");
 							if(valueList.getLength() == 1) {
 								this._save_card_token = valueList.item(0).getTextContent();
