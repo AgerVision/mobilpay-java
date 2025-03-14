@@ -105,7 +105,7 @@ public class Notify {
 			if(n != null)
 				this._errorCode = Integer.parseInt(n.getTextContent());
 			
-			this._errorMessage = tmpNode.getNodeValue();
+			this._errorMessage = tmpNode.getTextContent();
 		}
 		
 		// Find the parent 'order' element to look for params
